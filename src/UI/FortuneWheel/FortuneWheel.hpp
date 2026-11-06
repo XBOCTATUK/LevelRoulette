@@ -8,6 +8,7 @@ namespace TailyUI {
     protected:
         cocos2d::CCDrawNode* m_drawNode = nullptr;
     
-        bool init();
+        bool init() override;
+        virtual void update(float dt) override;
     };
 }

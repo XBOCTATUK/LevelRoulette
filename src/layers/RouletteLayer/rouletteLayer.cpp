@@ -182,5 +182,12 @@ bool RouletteLayer::init() {
 
 	m_mainMenu->updateLayout();
 
+	setKeyboardEnabled(true);
+	setKeypadEnabled(true);
+
     return true;
+}
+
+void RouletteLayer::keyBackClicked() {
+	CCDirector::get()->popSceneWithTransition(0.5f, kPopTransitionFade);
 }

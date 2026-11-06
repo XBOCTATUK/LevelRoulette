@@ -29,5 +29,7 @@ protected:
     geode::NineSlice* m_levelListBG = nullptr;
     geode::ScrollLayer* m_levelScroll = nullptr;
 
-    bool init();
+    bool init() override;
+
+    virtual void keyBackClicked() override;
 };
