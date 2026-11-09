@@ -1,4 +1,7 @@
 #include "RouletteLayer.hpp"
+#include "../../Models/ListManager/ListManager.hpp"
+#include "../../Popups/ListSelectPopup/ListSelectPopup.hpp"
+#include "SimpleLevelCell.hpp"
 
 using namespace geode::prelude;
 using namespace TailyUI;
@@ -24,17 +27,24 @@ bool RouletteLayer::init() {
     if (!CCLayer::init()) return false;
 
 	setID("RouletteLayer");
-	setPosition(getContentSize() / 2.0f);
+	setAnchorPoint({ 0.0f, 0.0f });
 
 	m_bg = TailyUI::RepeatBG::create("game_bg_01_001.png");
 	addChildAtPosition(
 		m_bg, Anchor::BottomLeft, {}
 	);
 
+	float width = std::min(getContentWidth(), 750.0f);
+
 	m_mainContent = CCNode::create();
+	m_mainContent->setLayout(
+		SimpleRowLayout::create()
+		->setMainAxisAlignment(MainAxisAlignment::Between)
+		->setMainAxisScaling(AxisScaling::None)
+		->setCrossAxisScaling(AxisScaling::None)
+	);
 	m_mainContent->setContentSize({
-		std::min(getContentWidth(), 569.9f),
-		getContentHeight()
+		width, getContentHeight()
 	});
 	m_mainContent->setAnchorPoint({ 0.5f, 0.5f });
 	addChildAtPosition(
@@ -43,7 +53,7 @@ bool RouletteLayer::init() {
 
 	m_leftContent = CCNode::create();
 	m_leftContent->setContentSize({
-		m_mainContent->getContentWidth() * 0.6f,
+		std::min(width * 0.6f, 340.0f),
 		m_mainContent->getContentHeight()
 	});
 	m_leftContent->setAnchorPoint({ 0.0f, 0.5f });
@@ -53,7 +63,7 @@ bool RouletteLayer::init() {
 
 	m_rightContent = CCNode::create();
 	m_rightContent->setContentSize({
-		m_mainContent->getContentWidth() * 0.4f,
+		std::min(width * 0.4f, 230.0f),
 		m_mainContent->getContentHeight()
 	});
 	m_rightContent->setAnchorPoint({ 1.0f, 0.5f });
@@ -63,27 +73,27 @@ bool RouletteLayer::init() {
 
 	auto fortuneWheel = FortuneWheel::create();
 	m_leftContent->addChildAtPosition(
-		fortuneWheel, Anchor::Center, { 0.0f, -25.0f }
+		fortuneWheel, Anchor::Center, { 0.0f, -21.0f }
 	);
 
 	m_titleBG = NineSlice::create("square02b_001.png");
 	m_titleBG->setContentSize({
 		(m_leftContent->getContentWidth() - 20.0f) * 2.0f,
-		40.0f * 2.0f
+		32.0f * 2.0f
 	});
 	m_titleBG->setScale(0.5f);
 	m_titleBG->setColor({ 0, 0, 0 });
 	m_titleBG->setOpacity(51);
 	m_leftContent->addChildAtPosition(
-		m_titleBG, Anchor::Top, { 0.0f, -30.0f }
+		m_titleBG, Anchor::Top, { 0.0f, -26.0f }
 	);
 
 	m_levelName = Label::create(
 		"Artemis 13", "bigFont.fnt"
 	);
-	m_levelName->setScale(1.0f);
+	m_levelName->setScale(0.7f);
 	m_leftContent->addChildAtPosition(
-		m_levelName, Anchor::Top, { 0.0f, -22.0f }
+		m_levelName, Anchor::Top, { 0.0f, -19.0f }
 	);
 
 	m_creatorName = Label::create(
@@ -91,7 +101,7 @@ bool RouletteLayer::init() {
 	);
 	m_creatorName->setScale(0.5f);
 	m_leftContent->addChildAtPosition(
-		m_creatorName, Anchor::Top, { 0.0f, -42.0f }
+		m_creatorName, Anchor::Top, { 0.0f, -34.0f }
 	);
 
 	m_mainMenu = CCMenu::create();
@@ -110,7 +120,7 @@ bool RouletteLayer::init() {
 	);
 
 	int btnWidth = static_cast<int>(m_mainMenu->getContentWidth()) - 16;
-	int halfBtnWidth = btnWidth / 2 - 10;
+	int halfBtnWidth = btnWidth / 2 - 12;
 
 	auto closeBtnSpr = ButtonSprite::create(
 		"Close", btnWidth, btnWidth, 0.8f, false,
@@ -157,35 +167,86 @@ bool RouletteLayer::init() {
 	);
 	m_mainMenu->addChild(rouletteBtnMenu);
 
-
-	m_levelListNode = CCNode::create();
-	m_levelListNode->setContentSize(
+	m_levelListMenu = CCMenu::create();
+	m_levelListMenu->setContentSize(
 		m_mainMenu->getContentSize() - ccp( 0.0f, m_closeBtn->getContentHeight() + rouletteBtnMenu->getContentHeight() + 10.0f )
 	);
-	m_mainMenu->addChild(m_levelListNode);
+	m_mainMenu->addChild(m_levelListMenu);
 
 	m_levelListBG = NineSlice::create("square01_001.png");
-	m_levelListBG->setContentSize(m_levelListNode->getContentSize());
-	m_levelListNode->addChildAtPosition(
+	m_levelListBG->setContentSize(m_levelListMenu->getContentSize() * 1.5f);
+	m_levelListBG->setScale(1.0f / 1.5f);
+	m_levelListMenu->addChildAtPosition(
 		m_levelListBG, Anchor::Center, {}
 	);
 
-	m_levelScroll = ScrollLayer::create(m_levelListNode->getContentSize() - ccp( 10.0f, 10.0f ));
+	m_selectedListLabel = Label::create("", "goldFont.fnt");
+	m_selectedListLabel->setScale(0.75f);
+	m_selectedListLabel->setVisible(false);
+	m_levelListMenu->addChildAtPosition(
+		m_selectedListLabel, Anchor::Top, { 0.0f, -23.0f }
+	);
+
+	auto selectListBtnSpr = CCSprite::createWithSpriteFrameName("GJ_viewListsBtn_001.png");
+	selectListBtnSpr->setScale(0.6f);
+	m_selectListBtn = CCMenuItemExt::createSpriteExtra(
+		selectListBtnSpr, [this](auto) {
+			ListSelectPopup::create()->show();
+		}
+	);
+	m_levelListMenu->addChildAtPosition(
+		m_selectListBtn, Anchor::TopRight, { -25.0f, -23.0f }
+	);
+
+	m_levelScroll = ScrollLayer::create(m_levelListMenu->getContentSize() - ccp( 20.0f, 50.0f ));
+	m_levelScroll->ignoreAnchorPointForPosition(false);
 	auto content = m_levelScroll->m_contentLayer;
 
 	content->setLayout(
 		ScrollLayer::createDefaultListLayout()
 	);
-	m_levelListNode->addChildAtPosition(
-		m_levelScroll, Anchor::Center, {}
+	m_levelListMenu->addChildAtPosition(
+		m_levelScroll, Anchor::Center, { 0.0f, -15.0f }
+	);
+
+	m_noListLabel = Label::create(
+		"No list is selected.", "bigFont.fnt"
+	);
+	m_noListLabel->setScale(0.5f);
+	m_noListLabel->setVisible(false);
+	m_levelListMenu->addChildAtPosition(
+		m_noListLabel, Anchor::Center, {}
 	);
 
 	m_mainMenu->updateLayout();
+
+	loadCurrentList();
 
 	setKeyboardEnabled(true);
 	setKeypadEnabled(true);
 
     return true;
+}
+
+void RouletteLayer::loadCurrentList() {
+	auto currentList = ListManager::getCurrentList();
+
+	if (!currentList) {
+		m_noListLabel->setVisible(true);
+		return;
+	}
+
+	m_selectedListLabel->setString(currentList->name.c_str());
+	m_selectedListLabel->setVisible(true);
+
+	for (auto& level : currentList->levels) {
+		auto cell = SimpleLevelCell::create(
+			level, m_levelScroll->getContentWidth()
+		);
+		m_levelScroll->m_contentLayer->addChild(cell);
+	}
+	m_levelScroll->m_contentLayer->updateLayout();
+	m_levelScroll->scrollToTop();
 }
 
 void RouletteLayer::keyBackClicked() {

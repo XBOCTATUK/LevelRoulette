@@ -17,10 +17,12 @@ namespace TailyUI {
     bool RepeatBG::init(const char* bgName) {
         if (!CCSprite::initWithFile(bgName)) return false;
 
+        ccTexParams params = { GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT };
+        getTexture()->setTexParameters(&params);
+
         auto winSize = CCDirector::get()->getWinSize();
 
         setAnchorPoint({ 0.0f, 0.0f });
-        setContentSize({ 1024.0f, 512.0f });
         setTextureRect({ 0.0f, 0.0f, 1024.0f, 512.0f });
         setScale(winSize.width / 480.0f);
         setColor({ 40, 125, 255 });

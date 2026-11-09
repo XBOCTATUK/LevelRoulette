@@ -25,11 +25,15 @@ protected:
     CCMenuItemSpriteExtra* m_skipBtn = nullptr;
     CCMenuItemSpriteExtra* m_listBtn = nullptr;
 
-    cocos2d::CCNode* m_levelListNode = nullptr;
+    cocos2d::CCMenu* m_levelListMenu = nullptr;
     geode::NineSlice* m_levelListBG = nullptr;
+    geode::Label* m_selectedListLabel = nullptr;
+    CCMenuItemSpriteExtra* m_selectListBtn = nullptr;
     geode::ScrollLayer* m_levelScroll = nullptr;
+    geode::Label* m_noListLabel = nullptr;
 
     bool init() override;
+    void loadCurrentList();
 
     virtual void keyBackClicked() override;
 };
