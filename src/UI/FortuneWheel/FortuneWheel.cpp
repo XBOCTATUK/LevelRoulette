@@ -33,7 +33,7 @@ namespace TailyUI {
 
         m_drawNode = CCDrawNode::create();
         m_drawNode->setAnchorPoint({ 0.5f, 0.5f });
-        m_drawNode->setPosition(getContentSize() / 2.0f);
+        m_drawNode->setID("wheel-base");
 
         m_drawNode->drawCircle(
             center, radius, { 1.0f, 1.0f, 1.0f, 1.0f },
@@ -51,7 +51,7 @@ namespace TailyUI {
 
             for (int j = 0; j <= steps; j++) {
                 float rad = segmentAngle * (i + static_cast<float>(j) / steps);
-                auto point = center + ccp( std::cos(rad), std::sin(rad) ) * (radius - rimWidth);
+                auto point = center + ccp(std::cos(rad), std::sin(rad)) * (radius - rimWidth);
                 
                 verts.push_back(point);
             }
@@ -91,7 +91,17 @@ namespace TailyUI {
             0.0f, { 1.0f, 1.0f, 1.0f, 1.0f }, 32
         );
 
-        addChild(m_drawNode);
+        addChildAtPosition(
+            m_drawNode, Anchor::Center, {}
+        );
+
+        m_arrowSpr = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
+        m_arrowSpr->setScaleX(0.8f);
+        m_arrowSpr->setScaleY(0.6f);
+        m_arrowSpr->setID("wheel-arrow");
+        addChildAtPosition(
+            m_arrowSpr, Anchor::Right, {}
+        );
 
         scheduleUpdate();
 

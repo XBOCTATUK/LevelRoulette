@@ -15,7 +15,7 @@ protected:
     cocos2d::CCNode* m_rightContent = nullptr;
 
     TailyUI::FortuneWheel* m_fortuneWheel = nullptr;
-    geode::NineSlice* m_titleBG = nullptr;
+    geode::NineSlice* m_levelBG = nullptr;
     geode::Label* m_levelName = nullptr;
     geode::Label* m_creatorName = nullptr;
 

@@ -22,6 +22,7 @@ class $modify(LevelSearchLayer) {
                 );
             }
         );
+        btn->setID("roulette-btn"_spr);
 
         rightFilterMenu->addChild(btn);
         rightFilterMenu->updateLayout();
