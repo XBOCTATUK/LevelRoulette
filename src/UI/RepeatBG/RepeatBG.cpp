@@ -1,5 +1,4 @@
 #include "RepeatBG.hpp"
-#include "../../Utils/CalculateCoverScale.hpp"
 
 using namespace geode::prelude;
 

@@ -17,6 +17,9 @@ public:
     static void addLevelToList(int listID, GJGameLevel* level);
     static void removeLevelFromList(int listID, int levelID);
 
+    static void importLists();
+    static void exportLists(const std::vector<int>& listIDs);
+
 private:
     static geode::Result<matjson::Value> getData();
     static void saveData(const matjson::Value& data, const std::string& fileName = "lists.json");

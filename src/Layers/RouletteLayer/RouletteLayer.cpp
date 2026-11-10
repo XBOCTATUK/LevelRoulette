@@ -235,7 +235,7 @@ bool RouletteLayer::init() {
 	);
 
 	m_noListLabel = Label::create(
-		"No list is selected.", "bigFont.fnt"
+		"No list selected", "bigFont.fnt"
 	);
 	m_noListLabel->setScale(0.5f);
 	m_noListLabel->setVisible(false);

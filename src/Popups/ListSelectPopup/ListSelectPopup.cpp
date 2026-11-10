@@ -1,4 +1,5 @@
 #include "ListSelectPopup.hpp"
+#include "../../Models/ListManager/ListManager.hpp"
 
 using namespace geode::prelude;
 
@@ -15,7 +16,7 @@ ListSelectPopup* ListSelectPopup::create() {
 bool ListSelectPopup::init() {
     if (!Popup::init(280.0f, 280.0f)) return false;
 
-    setTitle("List Selection");
+    setTitle("Select a List");
 
 	m_scrollBG = CCLayerColor::create({ 0, 0, 0, 51 });
 	m_scrollBG->setContentSize({ 240.0f, 200.0f });
@@ -50,7 +51,7 @@ bool ListSelectPopup::init() {
 
 	m_importBtn = CCMenuItemExt::createSpriteExtra(
 		importBtnSpr, [this](auto) {
-			
+			ListManager::importLists();
 		}
 	);
 	m_importBtn->setID("import-button");
@@ -63,7 +64,15 @@ bool ListSelectPopup::init() {
 
 	m_exportBtn = CCMenuItemExt::createSpriteExtra(
 		exportBtnSpr, [this](auto) {
-			
+			if (m_checkedListIDs.empty()) {
+				FLAlertLayer::create(
+					"No Lists Selected",
+					"Select the lists you want to export first.",
+					"OK"
+				);
+			}
+
+			ListManager::exportLists(m_checkedListIDs);
 		}
 	);
 	m_exportBtn->setID("export-button");
@@ -76,9 +85,8 @@ bool ListSelectPopup::init() {
 		->setMainAxisDirection(AxisDirection::LeftToRight)
 		->setMainAxisScaling(AxisScaling::Fit)
 		->setCrossAxisScaling(AxisScaling::Fit)
-		->setGap(8.0f)
+		->setGap(10.0f)
 	);
-	m_importExportMenu->setContentSize({});
 	m_importExportMenu->ignoreAnchorPointForPosition(false);
 	m_importExportMenu->setID("import-export-menu");
 	m_mainLayer->addChildAtPosition(

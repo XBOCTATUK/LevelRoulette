@@ -24,11 +24,11 @@ void ListManager::saveData(const matjson::Value& data, const std::string& fileNa
 
     auto writeResult = file::writeToJson(listsPath, data);
     if (writeResult.isErr()) {
-        log::error("Failed to save '{}': {}", fileName, writeResult.unwrapErr());
+        log::error("Failed to save {}: {}", fileName, writeResult.unwrapErr());
         FLAlertLayer::create(
             "Error",
-            "Failed to save the list. Please try again later.",
-            "Ok"
+            "Couldn't save your lists. Recent changes may be lost after restarting the game.",
+            "OK"
         )->show();
     }
 }
@@ -45,7 +45,7 @@ void ListManager::load() {
 
     auto data = dataResult.unwrap();
     if (!data.isObject()) {
-        markBroken("Root is not an object");
+        markBroken("the root value is not a JSON object");
         return;
     }
     if (data.size() == 0) return;
@@ -55,7 +55,7 @@ void ListManager::load() {
         auto time = fmt::format("{:%Y-%m-%d_%H-%M-%S}", now);
 
         if (!saveBackup(fmt::format("lists-backup-{}.json", time))) {
-            markBroken("Backup failed");
+            markBroken("couldn't create a backup before migrating to the new format");
             return;
         }
 
@@ -82,7 +82,7 @@ void ListManager::load() {
 
 void ListManager::save() {
     if (s_isBroken) {
-        log::error("Saving the file was cancelled. File is marked as broken.");
+        log::error("Lists weren't saved because the lists file failed to load");
         return;
     }
 
@@ -158,7 +158,7 @@ void ListManager::addLevelToList(int listID, GJGameLevel* level) {
 
     auto list = getList(listID);
     if (!list) {
-        log::error("Invalid list ID ({})", listID);
+        log::error("List with ID {} not found", listID);
         return;
     }
 
@@ -195,6 +195,187 @@ void ListManager::removeLevelFromList(int listID, int levelID) {
     );
 
     save();
+}
+
+void ListManager::importLists() {
+    async::spawn(
+        file::pick(file::PickMode::OpenFile, file::FilePickOptions {
+            .filters = { file::FilePickOptions::Filter {
+                .description = "JSON files",
+                .files = { "*.json" },
+            }}
+        }),
+        [](Result<std::optional<std::filesystem::path>> result) {
+            if (result.isErr()) {
+                log::error("Failed to open the file picker: {}", result.unwrapErr());
+
+                FLAlertLayer::create(
+                    "Error",
+                    "Couldn't open the file picker. Please try again.",
+                    "OK"
+                )->show();
+
+                return;
+            }
+
+            if (!result.unwrap().has_value()) return;
+
+            auto dataResult = file::readJson(result.unwrap().value());
+            if (dataResult.isErr()) {
+                log::error("Failed to read the import file: {}", dataResult.unwrapErr());
+
+                FLAlertLayer::create(
+                    "Error",
+                    "Couldn't read the selected file. Make sure it's a valid JSON file.",
+                    "OK"
+                )->show();
+                return;
+            }
+
+            auto data = dataResult.unwrap();
+            if (!data.contains("lists")) {
+                log::error("Import file has no \"lists\" field");
+
+                FLAlertLayer::create(
+                    "Error",
+                    "This file doesn't contain any Level Roulette lists.",
+                    "OK"
+                )->show();
+                return;
+            }
+
+            auto listsResult = data["lists"].as<std::vector<RouletteList>>();
+            if (listsResult.isErr()) {
+                log::error("Import file contains invalid list data: {}", listsResult.unwrapErr());
+
+                FLAlertLayer::create(
+                    "Error",
+                    "This file contains invalid list data and can't be imported.",
+                    "OK"
+                )->show();
+                return;
+            }
+
+            auto lists = listsResult.unwrap();
+            if (lists.size() == 0) {
+                FLAlertLayer::create(
+                    "Nothing to Import",
+                    "This file doesn't contain any lists.",
+                    "OK"
+                )->show();
+
+                return;
+            }
+
+            load();
+            if (s_isBroken) {
+                FLAlertLayer::create(
+                    "Error",
+                    "Your lists failed to load, so importing is disabled to prevent data loss.",
+                    "OK"
+                )->show();
+
+                return;
+            }
+
+            for (auto& list : lists) {
+                list.id = ++s_lastID;
+            }
+
+            s_lists.insert(s_lists.end(), lists.begin(), lists.end());
+            save();
+
+            FLAlertLayer::create(
+                "Import Complete",
+                fmt::format("Imported {} list{}.", lists.size(), lists.size() == 1 ? "" : "s"),
+                "OK"
+            )->show();
+        }
+    );
+}
+
+void ListManager::exportLists(const std::vector<int> &listIDs) {
+    load();
+
+    std::vector<RouletteList> listsToExport;
+    listsToExport.reserve(listIDs.size());
+
+    for (int id : listIDs) {
+        if (auto list = getList(id)) {
+            listsToExport.push_back(*list);
+        }
+    }
+
+    if (listsToExport.empty()) {
+        FLAlertLayer::create(
+            "Nothing to Export",
+            "There are no lists to export.",
+            "OK"
+        )->show();
+        
+        return;
+    }
+
+    std::string fileName = listsToExport.front().name;
+    for (char& c : fileName) {
+        if (std::string_view("<>:\"/\\|?*").find(c) != std::string_view::npos) c = '_';
+    }
+
+    auto defaultPath = listsToExport.size() == 1
+    ? fileName + ".json"
+    : "level-roulette-lists.json";
+
+    async::spawn(
+        file::pick(file::PickMode::SaveFile, file::FilePickOptions {
+            .defaultPath = defaultPath,
+            .filters = { file::FilePickOptions::Filter {
+                .description = "JSON files",
+                .files = { "*.json" },
+            }}
+        }),
+        [listsToExport = std::move(listsToExport)](Result<std::optional<std::filesystem::path>> result) {
+            if (result.isErr()) {
+                log::error("Failed to open the file picker: {}", result.unwrapErr());
+
+                FLAlertLayer::create(
+                    "Error",
+                    "Couldn't open the file picker. Please try again.",
+                    "OK"
+                )->show();
+
+                return;
+            }
+
+            if (!result.unwrap().has_value()) return;
+
+            auto path = result.unwrap().value();
+            if (path.extension() != ".json") path += ".json";
+
+            auto exportData = matjson::makeObject({
+                { "fileVersion", 2 },
+                { "lists", listsToExport }
+            });
+
+            auto writeResult = file::writeToJson(path, exportData);
+            if (writeResult.isErr()) {
+                log::error("Failed to export to {}: {}", path, writeResult.unwrapErr());
+
+                FLAlertLayer::create(
+                    "Error",
+                    "Couldn't export your lists. Please try again.",
+                    "OK"
+                )->show();
+
+                return;
+            }
+
+            FLAlertLayer::create(
+                "Export Complete",
+                fmt::format("Exported {} list{}.", listsToExport.size(), listsToExport.size() == 1 ? "" : "s"),
+                "OK"
+            )->show();
+        }
+    );
 }
 
 bool ListManager::saveBackup(const std::string& backupName) {
@@ -240,12 +421,12 @@ void ListManager::migrateData(const matjson::Value &data) {
 }
 
 void ListManager::markBroken(const std::string& reason) {
-    log::error("Lists file is broken: {}", reason);
+    log::error("Failed to load lists: {}", reason);
     s_isBroken = true;
 
     FLAlertLayer::create(
         "Error",
-        "Failed to load your lists. Your save file was left untouched.",
-        "Ok"
+        "Couldn't load your lists. Your save file hasn't been changed.",
+        "OK"
     )->show();
 }

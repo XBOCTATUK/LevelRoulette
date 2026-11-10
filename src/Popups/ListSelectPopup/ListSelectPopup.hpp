@@ -13,5 +13,7 @@ protected:
     CCMenuItemSpriteExtra* m_importBtn = nullptr;
     CCMenuItemSpriteExtra* m_exportBtn = nullptr;
 
+    std::vector<int> m_checkedListIDs;
+
     bool init();
 };
