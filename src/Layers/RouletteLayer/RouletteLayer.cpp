@@ -24,7 +24,7 @@ CCScene* RouletteLayer::scene() {
 }
 
 bool RouletteLayer::init() {
-    if (!CCLayer::init()) return false;
+	if (!CCLayer::init()) return false;
 
 	setID("RouletteLayer");
 	setAnchorPoint({ 0.0f, 0.0f });
@@ -141,7 +141,7 @@ bool RouletteLayer::init() {
 	);
 
 	m_closeBtn = CCMenuItemExt::createSpriteExtra(
-		closeBtnSpr, [this](auto) {
+		closeBtnSpr, [](auto) {
 			CCDirector::get()->popSceneWithTransition(0.5f, kPopTransitionFade);
 		}
 	);
@@ -155,7 +155,7 @@ bool RouletteLayer::init() {
 
 	m_spinBtn = CCMenuItemExt::createSpriteExtra(
 		spinBtnSpr, [this](auto) {
-			
+
 		}
 	);
 	m_spinBtn->setID("spin-button");
@@ -167,7 +167,7 @@ bool RouletteLayer::init() {
 
 	m_skipBtn = CCMenuItemExt::createSpriteExtra(
 		skipBtnSpr, [this](auto) {
-			
+
 		}
 	);
 	m_skipBtn->setID("skip-button");
@@ -213,7 +213,7 @@ bool RouletteLayer::init() {
 	selectListBtnSpr->setScale(0.6f);
 
 	m_selectListBtn = CCMenuItemExt::createSpriteExtra(
-		selectListBtnSpr, [this](auto) {
+		selectListBtnSpr, [](auto) {
 			ListSelectPopup::create()->show();
 		}
 	);
@@ -249,7 +249,7 @@ bool RouletteLayer::init() {
 	setKeyboardEnabled(true);
 	setKeypadEnabled(true);
 
-    return true;
+	return true;
 }
 
 void RouletteLayer::loadCurrentList() {

@@ -3,53 +3,53 @@
 using namespace geode::prelude;
 
 namespace TailyUI {
-    RepeatBG* RepeatBG::create(const char* bgName) {
-        auto ret = new RepeatBG();
-        if (ret->init(bgName)) {
-            ret->autorelease();
-            return ret;
-        }
-        CC_SAFE_DELETE(ret);
-        return nullptr;
-    }
+	RepeatBG* RepeatBG::create(const char* bgName) {
+		auto ret = new RepeatBG();
+		if (ret->init(bgName)) {
+			ret->autorelease();
+			return ret;
+		}
+		CC_SAFE_DELETE(ret);
+		return nullptr;
+	}
 
-    bool RepeatBG::init(const char* bgName) {
-        if (!CCSprite::initWithFile(bgName)) return false;
+	bool RepeatBG::init(const char* bgName) {
+		if (!CCSprite::initWithFile(bgName)) return false;
 
-        ccTexParams params = { GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT };
-        getTexture()->setTexParameters(&params);
+		ccTexParams params = { GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT };
+		getTexture()->setTexParameters(&params);
 
-        auto winSize = CCDirector::get()->getWinSize();
+		auto winSize = CCDirector::get()->getWinSize();
 
-        setAnchorPoint({ 0.0f, 0.0f });
-        setTextureRect({ 0.0f, 0.0f, 1024.0f, 512.0f });
-        setScale(winSize.width / 480.0f);
-        setColor({ 40, 125, 255 });
+		setAnchorPoint({ 0.0f, 0.0f });
+		setTextureRect({ 0.0f, 0.0f, 1024.0f, 512.0f });
+		setScale(winSize.width / 480.0f);
+		setColor({ 40, 125, 255 });
 
-        return true;
-    }
+		return true;
+	}
 
-    void RepeatBG::onEnter() {
-        CCSprite::onEnter();
-        scheduleUpdate();
-    }
+	void RepeatBG::onEnter() {
+		CCSprite::onEnter();
+		scheduleUpdate();
+	}
 
-    void RepeatBG::onExit() {
-        unscheduleUpdate();
-        CCSprite::onExit();
-    }
+	void RepeatBG::onExit() {
+		unscheduleUpdate();
+		CCSprite::onExit();
+	}
 
-    void RepeatBG::setSpeed(float speed) {
-        m_speed = speed;
-    }
+	void RepeatBG::setSpeed(float speed) {
+		m_speed = speed;
+	}
 
-    void RepeatBG::update(float dt) {
-        CCSprite::update(dt);
+	void RepeatBG::update(float dt) {
+		CCSprite::update(dt);
 
-        setPositionX(getPositionX() - dt * m_speed);
+		setPositionX(getPositionX() - dt * m_speed);
 
-        if (getPositionX() <= -512.0f * getScale()) {
-            setPositionX(0.0f);
-        }
-    }
+		if (getPositionX() <= -512.0f * getScale()) {
+			setPositionX(0.0f);
+		}
+	}
 }

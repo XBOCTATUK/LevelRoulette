@@ -4,29 +4,29 @@
 using namespace geode::prelude;
 
 class $modify(LevelSearchLayer) {
-    bool init(int type) {
-        if (!LevelSearchLayer::init(type)) return false;
-        
-        auto rightFilterMenu = getChildByID("other-filter-menu");
-        if (!rightFilterMenu) return false;
+	bool init(int type) {
+		if (!LevelSearchLayer::init(type)) return false;
 
-        auto spr = CCSprite::create("logo-spr.png"_spr);
-        auto btnSpr = CircleButtonSprite::create(
-            spr, CircleBaseColor::Green, CircleBaseSize::Small
-        );
+		auto rightFilterMenu = getChildByID("other-filter-menu");
+		if (!rightFilterMenu) return true;
 
-        auto btn = CCMenuItemExt::createSpriteExtra(
-            btnSpr, [this](auto) {
-                CCDirector::get()->pushScene(
-                    CCTransitionFade::create(0.5f, RouletteLayer::scene())
-                );
-            }
-        );
-        btn->setID("roulette-btn"_spr);
+		auto spr = CCSprite::create("logo-spr.png"_spr);
+		auto btnSpr = CircleButtonSprite::create(
+			spr, CircleBaseColor::Green, CircleBaseSize::Small
+		);
 
-        rightFilterMenu->addChild(btn);
-        rightFilterMenu->updateLayout();
+		auto btn = CCMenuItemExt::createSpriteExtra(
+			btnSpr, [](auto) {
+				CCDirector::get()->pushScene(
+					CCTransitionFade::create(0.5f, RouletteLayer::scene())
+				);
+			}
+		);
+		btn->setID("roulette-btn"_spr);
 
-        return true;
-    }
+		rightFilterMenu->addChild(btn);
+		rightFilterMenu->updateLayout();
+
+		return true;
+	}
 };

@@ -4,429 +4,423 @@
 
 using namespace geode::prelude;
 
-geode::Result<matjson::Value> ListManager::getData() {
-    auto listsPath = geode::Mod::get()->getPersistentDir() / "lists.json";
+Result<matjson::Value> ListManager::getData() {
+	auto listsPath = Mod::get()->getPersistentDir() / "lists.json";
 
-    if (!std::filesystem::exists(listsPath)) {
-        return Ok(matjson::Value::object());
-    }
+	if (!std::filesystem::exists(listsPath)) {
+		return Ok(matjson::Value::object());
+	}
 
-    auto data = file::readJson(listsPath);
-    if (data.isErr()) {
-        return Err(data.unwrapErr());
-    }
+	auto data = file::readJson(listsPath);
+	if (data.isErr()) return Err(data.unwrapErr());
 
-    return Ok(data.unwrap());
+	return Ok(data.unwrap());
 }
 
 void ListManager::saveData(const matjson::Value& data, const std::string& fileName) {
-    auto listsPath = geode::Mod::get()->getPersistentDir() / fileName;
+	auto listsPath = Mod::get()->getPersistentDir() / fileName;
 
-    auto writeResult = file::writeToJson(listsPath, data);
-    if (writeResult.isErr()) {
-        log::error("Failed to save {}: {}", fileName, writeResult.unwrapErr());
-        FLAlertLayer::create(
-            "Error",
-            "Couldn't save your lists. Recent changes may be lost after restarting the game.",
-            "OK"
-        )->show();
-    }
+	auto writeResult = file::writeToJson(listsPath, data);
+	if (writeResult.isErr()) {
+		log::error("Failed to save {}: {}", fileName, writeResult.unwrapErr());
+		FLAlertLayer::create(
+			"Error",
+			"Couldn't save your lists. Recent changes may be lost after restarting the game.",
+			"OK"
+		)->show();
+	}
 }
 
 void ListManager::load() {
-    if (s_isLoaded) return;
-    s_isLoaded = true;
-    
-    auto dataResult = getData();
-    if (dataResult.isErr()) {
-        markBroken(dataResult.unwrapErr());
-        return;
-    }
+	if (s_isLoaded) return;
+	s_isLoaded = true;
 
-    auto data = dataResult.unwrap();
-    if (!data.isObject()) {
-        markBroken("the root value is not a JSON object");
-        return;
-    }
-    if (data.size() == 0) return;
+	auto dataResult = getData();
+	if (dataResult.isErr()) {
+		markBroken(dataResult.unwrapErr());
+		return;
+	}
 
-    if (!data.contains("fileVersion")) {
-        auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
-        auto time = fmt::format("{:%Y-%m-%d_%H-%M-%S}", now);
+	auto data = dataResult.unwrap();
+	if (!data.isObject()) {
+		markBroken("the root value is not a JSON object");
+		return;
+	}
+	if (data.size() == 0) return;
 
-        if (!saveBackup(fmt::format("lists-backup-{}.json", time))) {
-            markBroken("couldn't create a backup before migrating to the new format");
-            return;
-        }
+	if (!data.contains("fileVersion")) {
+		auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
+		auto time = fmt::format("{:%Y-%m-%d_%H-%M-%S}", now);
 
-        migrateData(data);
-        save();
+		if (!saveBackup(fmt::format("lists-backup-{}.json", time))) {
+			markBroken("couldn't create a backup before migrating to the new format");
+			return;
+		}
 
-        return;
-    }
+		migrateData(data);
+		save();
 
-    auto lists = data["lists"].as<std::vector<RouletteList>>();
-    if (lists.isErr()) {
-        markBroken(lists.unwrapErr());
-        return;
-    }
-    s_lists = std::move(lists.unwrap());
+		return;
+	}
 
-    s_currentListID = data["currentListID"].asInt().unwrapOr(0);
-    s_lastID = 0;
+	auto lists = data["lists"].as<std::vector<RouletteList>>();
+	if (lists.isErr()) {
+		markBroken(lists.unwrapErr());
+		return;
+	}
+	s_lists = std::move(lists.unwrap());
 
-    for (const auto& list : s_lists) {
-        s_lastID = list.id > s_lastID ? list.id : s_lastID;
-    }
+	s_currentListID = data["currentListID"].asInt().unwrapOr(0);
+	s_lastID = 0;
+
+	for (const auto& list : s_lists) {
+		s_lastID = list.id > s_lastID ? list.id : s_lastID;
+	}
 }
 
 void ListManager::save() {
-    if (s_isBroken) {
-        log::error("Lists weren't saved because the lists file failed to load");
-        return;
-    }
+	if (s_isBroken) {
+		log::error("Lists weren't saved because the lists file failed to load");
+		return;
+	}
 
-    saveData(matjson::makeObject({
-        { "fileVersion", 2 },
-        { "lists", s_lists },
-        { "currentListID", s_currentListID }
-    }));
+	saveData(matjson::makeObject({
+		{ "fileVersion", 2 },
+		{ "currentListID", s_currentListID },
+		{ "lists", s_lists }
+	}));
 }
 
 const std::vector<RouletteList>& ListManager::getLists() {
-    load();
-    return s_lists;
+	load();
+	return s_lists;
 }
 
 RouletteList* ListManager::getList(int listID) {
-    load();
+	load();
 
-    auto it = std::ranges::find(s_lists, listID, &RouletteList::id);
-    if (it == s_lists.end()) return nullptr;
+	auto it = std::ranges::find(s_lists, listID, &RouletteList::id);
+	if (it == s_lists.end()) return nullptr;
 
-    return &*it;
+	return &*it;
 }
 
 RouletteList* ListManager::getCurrentList() {
-    load();
-    return getList(s_currentListID);
+	load();
+	return getList(s_currentListID);
 }
 
 void ListManager::setCurrentList(int listID) {
-    load();
-    s_currentListID = listID;
-    save();
+	load();
+	s_currentListID = listID;
+	save();
 }
 
 int ListManager::createList(const std::string& listName) {
-    load();
+	load();
 
-    auto& list = s_lists.emplace_back(
-        RouletteList{ ++s_lastID, listName, {} }
-    );
-    save();
+	auto& list = s_lists.emplace_back(
+		RouletteList{ ++s_lastID, listName, {} }
+	);
+	save();
 
-    return list.id;
+	return list.id;
 }
 
 void ListManager::renameList(int listID, const std::string& newName) {
-    if (auto it = getList(listID)) {
-        it->name = newName;
-        save();
-    }
+	if (auto it = getList(listID)) {
+		it->name = newName;
+		save();
+	}
 }
 
 void ListManager::removeList(int listID) {
-    load();
+	load();
 
-    std::erase_if(
-        s_lists, [listID](const auto& list) {
-            return list.id == listID;
-        }
-    );
+	std::erase_if(
+		s_lists, [listID](const auto& list) {
+			return list.id == listID;
+		}
+	);
 
-    if (s_currentListID == listID) {
-        s_currentListID = 0;
-    }
+	if (s_currentListID == listID) {
+		s_currentListID = 0;
+	}
 
-    save();
+	save();
 }
 
 void ListManager::addLevelToList(int listID, GJGameLevel* level) {
-    if (!level) return;
-    load();
+	if (!level) return;
 
-    auto list = getList(listID);
-    if (!list) {
-        log::error("List with ID {} not found", listID);
-        return;
-    }
+	auto list = getList(listID);
+	if (!list) {
+		log::error("List with ID {} not found", listID);
+		return;
+	}
 
-    auto it = std::find_if(
-        list->levels.begin(), list->levels.end(),
-        [levelID = level->m_levelID.value()](auto& listLevel) {
-            return listLevel.levelID == levelID;
-        }
-    );
-    if (it != list->levels.end()) return;
+	if (std::ranges::contains(list->levels, level->m_levelID.value(), &LevelData::levelID)) return;
 
-    auto listLevel = LevelData{
-        level->m_levelID.value(), level->m_levelName,
-        level->m_creatorName, Utils::difficultyFromLevel(level)
-    };
-    list->levels.push_back(listLevel);
+	auto listLevel = LevelData{
+		level->m_levelID.value(), level->m_levelName,
+		level->m_creatorName, Utils::difficultyFromLevel(level)
+	};
+	list->levels.push_back(listLevel);
 
-    save();
+	save();
 }
 
 void ListManager::removeLevelFromList(int listID, int levelID) {
-    load();
+	auto list = getList(listID);
+	if (!list) {
+		log::error("List with ID {} not found", listID);
+		return;
+	}
 
-    auto list = getList(listID);
-    if (!list) {
-        log::error("Invalid list ID ({})", listID);
-        return;
-    }
+	std::erase_if(
+		list->levels, [levelID](const auto& level) {
+			return level.levelID == levelID;
+		}
+	);
 
-    std::erase_if(
-        list->levels, [levelID](const auto& level) {
-            return level.levelID == levelID;
-        }
-    );
-
-    save();
+	save();
 }
 
 void ListManager::importLists() {
-    async::spawn(
-        file::pick(file::PickMode::OpenFile, file::FilePickOptions {
-            .filters = { file::FilePickOptions::Filter {
-                .description = "JSON files",
-                .files = { "*.json" },
-            }}
-        }),
-        [](Result<std::optional<std::filesystem::path>> result) {
-            if (result.isErr()) {
-                log::error("Failed to open the file picker: {}", result.unwrapErr());
+	async::spawn(
+		file::pick(file::PickMode::OpenFile, file::FilePickOptions {
+			.filters = { file::FilePickOptions::Filter {
+				.description = "JSON files",
+				.files = { "*.json" },
+			}}
+		}),
+		[](Result<std::optional<std::filesystem::path>> result) {
+			if (result.isErr()) {
+				log::error("Failed to open the file picker: {}", result.unwrapErr());
 
-                FLAlertLayer::create(
-                    "Error",
-                    "Couldn't open the file picker. Please try again.",
-                    "OK"
-                )->show();
+				FLAlertLayer::create(
+					"Error",
+					"Couldn't open the file picker. Please try again.",
+					"OK"
+				)->show();
 
-                return;
-            }
+				return;
+			}
 
-            if (!result.unwrap().has_value()) return;
+			if (!result.unwrap().has_value()) return;
 
-            auto dataResult = file::readJson(result.unwrap().value());
-            if (dataResult.isErr()) {
-                log::error("Failed to read the import file: {}", dataResult.unwrapErr());
+			auto dataResult = file::readJson(result.unwrap().value());
+			if (dataResult.isErr()) {
+				log::error("Failed to read the import file: {}", dataResult.unwrapErr());
 
-                FLAlertLayer::create(
-                    "Error",
-                    "Couldn't read the selected file. Make sure it's a valid JSON file.",
-                    "OK"
-                )->show();
-                return;
-            }
+				FLAlertLayer::create(
+					"Error",
+					"Couldn't read the selected file. Make sure it's a valid JSON file.",
+					"OK"
+				)->show();
 
-            auto data = dataResult.unwrap();
-            if (!data.contains("lists")) {
-                log::error("Import file has no \"lists\" field");
+				return;
+			}
 
-                FLAlertLayer::create(
-                    "Error",
-                    "This file doesn't contain any Level Roulette lists.",
-                    "OK"
-                )->show();
-                return;
-            }
+			auto data = dataResult.unwrap();
+			if (!data.contains("lists")) {
+				log::error("Import file has no \"lists\" field");
 
-            auto listsResult = data["lists"].as<std::vector<RouletteList>>();
-            if (listsResult.isErr()) {
-                log::error("Import file contains invalid list data: {}", listsResult.unwrapErr());
+				FLAlertLayer::create(
+					"Error",
+					"This file doesn't contain any Level Roulette lists.",
+					"OK"
+				)->show();
 
-                FLAlertLayer::create(
-                    "Error",
-                    "This file contains invalid list data and can't be imported.",
-                    "OK"
-                )->show();
-                return;
-            }
+				return;
+			}
 
-            auto lists = listsResult.unwrap();
-            if (lists.size() == 0) {
-                FLAlertLayer::create(
-                    "Nothing to Import",
-                    "This file doesn't contain any lists.",
-                    "OK"
-                )->show();
+			auto listsResult = data["lists"].as<std::vector<RouletteList>>();
+			if (listsResult.isErr()) {
+				log::error("Import file contains invalid list data: {}", listsResult.unwrapErr());
 
-                return;
-            }
+				FLAlertLayer::create(
+					"Error",
+					"This file contains invalid list data and can't be imported.",
+					"OK"
+				)->show();
 
-            load();
-            if (s_isBroken) {
-                FLAlertLayer::create(
-                    "Error",
-                    "Your lists failed to load, so importing is disabled to prevent data loss.",
-                    "OK"
-                )->show();
+				return;
+			}
 
-                return;
-            }
+			auto lists = listsResult.unwrap();
+			if (lists.empty()) {
+				FLAlertLayer::create(
+					"Nothing to Import",
+					"This file doesn't contain any lists.",
+					"OK"
+				)->show();
 
-            for (auto& list : lists) {
-                list.id = ++s_lastID;
-            }
+				return;
+			}
 
-            s_lists.insert(s_lists.end(), lists.begin(), lists.end());
-            save();
+			load();
+			if (s_isBroken) {
+				FLAlertLayer::create(
+					"Error",
+					"Your lists failed to load, so importing is disabled to prevent data loss.",
+					"OK"
+				)->show();
 
-            FLAlertLayer::create(
-                "Import Complete",
-                fmt::format("Imported {} list{}.", lists.size(), lists.size() == 1 ? "" : "s"),
-                "OK"
-            )->show();
-        }
-    );
+				return;
+			}
+
+			for (auto& list : lists) {
+				list.id = ++s_lastID;
+			}
+
+			s_lists.insert(s_lists.end(), lists.begin(), lists.end());
+			save();
+
+			FLAlertLayer::create(
+				"Import Complete",
+				fmt::format("Imported {} list{}.", lists.size(), lists.size() == 1 ? "" : "s"),
+				"OK"
+			)->show();
+		}
+	);
 }
 
 void ListManager::exportLists(const std::vector<int> &listIDs) {
-    load();
+	load();
 
-    std::vector<RouletteList> listsToExport;
-    listsToExport.reserve(listIDs.size());
+	std::vector<RouletteList> listsToExport;
+	listsToExport.reserve(listIDs.size());
 
-    for (int id : listIDs) {
-        if (auto list = getList(id)) {
-            listsToExport.push_back(*list);
-        }
-    }
+	for (int id : listIDs) {
+		if (auto list = getList(id)) {
+			listsToExport.push_back(*list);
+		}
+	}
 
-    if (listsToExport.empty()) {
-        FLAlertLayer::create(
-            "Nothing to Export",
-            "There are no lists to export.",
-            "OK"
-        )->show();
-        
-        return;
-    }
+	if (listsToExport.empty()) {
+		FLAlertLayer::create(
+			"Nothing to Export",
+			"There are no lists to export.",
+			"OK"
+		)->show();
 
-    std::string fileName = listsToExport.front().name;
-    for (char& c : fileName) {
-        if (std::string_view("<>:\"/\\|?*").find(c) != std::string_view::npos) c = '_';
-    }
+		return;
+	}
 
-    auto defaultPath = listsToExport.size() == 1
-    ? fileName + ".json"
-    : "level-roulette-lists.json";
+	std::string fileName = listsToExport.front().name;
+	for (char& c : fileName) {
+		if (std::string_view("<>:\"/\\|?*").find(c) != std::string_view::npos) {
+			c = '_';
+		}
+	}
 
-    async::spawn(
-        file::pick(file::PickMode::SaveFile, file::FilePickOptions {
-            .defaultPath = defaultPath,
-            .filters = { file::FilePickOptions::Filter {
-                .description = "JSON files",
-                .files = { "*.json" },
-            }}
-        }),
-        [listsToExport = std::move(listsToExport)](Result<std::optional<std::filesystem::path>> result) {
-            if (result.isErr()) {
-                log::error("Failed to open the file picker: {}", result.unwrapErr());
+	auto defaultPath = listsToExport.size() == 1
+	? fileName + ".json"
+	: "level-roulette-lists.json";
 
-                FLAlertLayer::create(
-                    "Error",
-                    "Couldn't open the file picker. Please try again.",
-                    "OK"
-                )->show();
+	async::spawn(
+		file::pick(file::PickMode::SaveFile, file::FilePickOptions {
+			.defaultPath = defaultPath,
+			.filters = { file::FilePickOptions::Filter {
+				.description = "JSON files",
+				.files = { "*.json" },
+			}}
+		}),
+		[listsToExport = std::move(listsToExport)](Result<std::optional<std::filesystem::path>> result) {
+			if (result.isErr()) {
+				log::error("Failed to open the file picker: {}", result.unwrapErr());
 
-                return;
-            }
+				FLAlertLayer::create(
+					"Error",
+					"Couldn't open the file picker. Please try again.",
+					"OK"
+				)->show();
 
-            if (!result.unwrap().has_value()) return;
+				return;
+			}
 
-            auto path = result.unwrap().value();
-            if (path.extension() != ".json") path += ".json";
+			if (!result.unwrap().has_value()) return;
 
-            auto exportData = matjson::makeObject({
-                { "fileVersion", 2 },
-                { "lists", listsToExport }
-            });
+			auto path = result.unwrap().value();
+			if (path.extension() != ".json") path += ".json";
 
-            auto writeResult = file::writeToJson(path, exportData);
-            if (writeResult.isErr()) {
-                log::error("Failed to export to {}: {}", path, writeResult.unwrapErr());
+			auto exportData = matjson::makeObject({
+				{ "fileVersion", 2 },
+				{ "lists", listsToExport }
+			});
 
-                FLAlertLayer::create(
-                    "Error",
-                    "Couldn't export your lists. Please try again.",
-                    "OK"
-                )->show();
+			auto writeResult = file::writeToJson(path, exportData);
+			if (writeResult.isErr()) {
+				log::error("Failed to export to {}: {}", path, writeResult.unwrapErr());
 
-                return;
-            }
+				FLAlertLayer::create(
+					"Error",
+					"Couldn't export your lists. Please try again.",
+					"OK"
+				)->show();
 
-            FLAlertLayer::create(
-                "Export Complete",
-                fmt::format("Exported {} list{}.", listsToExport.size(), listsToExport.size() == 1 ? "" : "s"),
-                "OK"
-            )->show();
-        }
-    );
+				return;
+			}
+
+			FLAlertLayer::create(
+				"Export Complete",
+				fmt::format("Exported {} list{}.", listsToExport.size(), listsToExport.size() == 1 ? "" : "s"),
+				"OK"
+			)->show();
+		}
+	);
 }
 
 bool ListManager::saveBackup(const std::string& backupName) {
-    auto listsPath = geode::Mod::get()->getPersistentDir() / "lists.json";
-    auto backupPath = geode::Mod::get()->getPersistentDir() / backupName;
+	auto listsPath = Mod::get()->getPersistentDir() / "lists.json";
+	auto backupPath = Mod::get()->getPersistentDir() / backupName;
 
-    std::error_code code;
-    std::filesystem::copy_file(listsPath, backupPath, code);
-    if (code) {
-        log::error("Failed to create backup: {}", code.message());
-    }
+	std::error_code code;
+	std::filesystem::copy_file(listsPath, backupPath, code);
+	if (code) {
+		log::error("Failed to create backup: {}", code.message());
+	}
 
-    return !code;
+	return !code;
 }
 
 void ListManager::migrateData(const matjson::Value &data) {
-    for (auto& [listKey, list] : data) {
-        if (!list.isObject()) continue;
+	for (auto& [listKey, list] : data) {
+		if (!list.isObject()) continue;
 
-        std::vector<LevelData> levels{};
-        for (auto& [levelKey, level] : list) {
-            if (!level.isObject()) continue;
-            
-            auto levelID = level["levelID"].asInt();
-            auto levelName = level["name"].asString();
-            auto creatorName = level["creator"].asString();
-            auto difficulty = level["diff"].asString();
-            if (levelID.isErr() || levelName.isErr() || creatorName.isErr() || difficulty.isErr()) continue;
+		std::vector<LevelData> levels{};
+		for (auto& [levelKey, level] : list) {
+			if (!level.isObject()) continue;
 
-            LevelData levelData{
-                static_cast<int>(levelID.unwrap()),
-                levelName.unwrap(),
-                creatorName.unwrap(),
-                stringToDifficulty(difficulty.unwrap())
-            };
+			auto levelID = level["levelID"].asInt();
+			auto levelName = level["name"].asString();
+			auto creatorName = level["creator"].asString();
+			auto difficulty = level["diff"].asString();
+			if (levelID.isErr() || levelName.isErr() || creatorName.isErr() || difficulty.isErr()) continue;
 
-            levels.push_back(levelData);
-        }
+			LevelData levelData{
+				static_cast<int>(levelID.unwrap()),
+				levelName.unwrap(),
+				creatorName.unwrap(),
+				stringToDifficulty(difficulty.unwrap())
+			};
 
-        RouletteList rouletteList{ ++s_lastID, listKey, levels };
-        s_lists.push_back(rouletteList);
-    }
+			levels.push_back(levelData);
+		}
+
+		RouletteList rouletteList{ ++s_lastID, listKey, levels };
+		s_lists.push_back(rouletteList);
+	}
 }
 
 void ListManager::markBroken(const std::string& reason) {
-    log::error("Failed to load lists: {}", reason);
-    s_isBroken = true;
+	log::error("Failed to load lists: {}", reason);
+	s_isBroken = true;
 
-    FLAlertLayer::create(
-        "Error",
-        "Couldn't load your lists. Your save file hasn't been changed.",
-        "OK"
-    )->show();
+	FLAlertLayer::create(
+		"Error",
+		"Couldn't load your lists. Your save file hasn't been changed.",
+		"OK"
+	)->show();
 }

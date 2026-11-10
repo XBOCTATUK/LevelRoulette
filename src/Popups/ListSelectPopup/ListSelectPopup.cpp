@@ -14,9 +14,9 @@ ListSelectPopup* ListSelectPopup::create() {
 }
 
 bool ListSelectPopup::init() {
-    if (!Popup::init(280.0f, 280.0f)) return false;
+	if (!Popup::init(280.0f, 280.0f)) return false;
 
-    setTitle("Select a List");
+	setTitle("Select a List");
 
 	m_scrollBG = CCLayerColor::create({ 0, 0, 0, 51 });
 	m_scrollBG->setContentSize({ 240.0f, 200.0f });
@@ -27,19 +27,17 @@ bool ListSelectPopup::init() {
 	);
 
 	m_listScroll = ScrollLayer::create(m_scrollBG->getContentSize() - ccp(20.0f, 20.0f));
-    m_listScroll->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout());
+	m_listScroll->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout());
 
 	m_listScroll->setAnchorPoint({ 0.5f, 0.5f });
-	m_listScroll->setPosition(m_scrollBG->getPosition());
 	m_listScroll->ignoreAnchorPointForPosition(false);
-    m_mainLayer->addChildAtPosition(
+	m_mainLayer->addChildAtPosition(
 		m_listScroll, Anchor::Center, { 0.0f, 2.0f }
 	);
 
 	m_scrollBorders = ListBorders::create();
-    m_scrollBorders->setContentSize(m_scrollBG->getContentSize());
-	m_scrollBorders->setPosition(m_scrollBG->getPosition());
-    m_mainLayer->addChildAtPosition(
+	m_scrollBorders->setContentSize(m_scrollBG->getContentSize());
+	m_mainLayer->addChildAtPosition(
 		m_scrollBorders, Anchor::Center, { 0.0f, 2.0f }
 	);
 
@@ -50,7 +48,7 @@ bool ListSelectPopup::init() {
 	importBtnSpr->setScale(0.8f);
 
 	m_importBtn = CCMenuItemExt::createSpriteExtra(
-		importBtnSpr, [this](auto) {
+		importBtnSpr, [](auto) {
 			ListManager::importLists();
 		}
 	);
@@ -69,7 +67,9 @@ bool ListSelectPopup::init() {
 					"No Lists Selected",
 					"Select the lists you want to export first.",
 					"OK"
-				);
+				)->show();
+
+				return;
 			}
 
 			ListManager::exportLists(m_checkedListIDs);
@@ -95,5 +95,5 @@ bool ListSelectPopup::init() {
 
 	m_importExportMenu->updateLayout();
 
-    return true;
+	return true;
 }
