@@ -1,5 +1,6 @@
 #include "ListSelectPopup.hpp"
 #include "../../Models/ListManager/ListManager.hpp"
+#include "../InputPopup/InputPopup.hpp"
 #include "RouletteListCell.hpp"
 
 using namespace geode::prelude;
@@ -61,9 +62,37 @@ bool ListSelectPopup::init() {
 		m_noListsLabel, Anchor::Center, { 0.0f, 2.0f }
 	);
 
+	auto createBtnSpr = ButtonSprite::create(
+		"Create", 80, 80, 0.8f, false,
+		"goldFont.fnt", "GJ_button_01.png"
+	);
+	createBtnSpr->setScale(0.8f);
+
+	m_createBtn = CCMenuItemExt::createSpriteExtra(
+		createBtnSpr, [this](auto) {
+			InputPopup::create(
+				"Create a list", "", "Create",
+				[](std::string listName) {
+					if (listName.empty()) {
+						FLAlertLayer::create(
+							"Empty list name",
+							"The list name cannot be empty.",
+							"Ok"
+						)->show();
+
+						return;
+					}
+
+					ListManager::createList(listName);
+				}
+			)->show();
+		}
+	);
+	m_createBtn->setID("import-button");
+
 	auto importBtnSpr = ButtonSprite::create(
 		"Import", 80, 80, 0.8f, false,
-		"goldFont.fnt", "GJ_button_01.png"
+		"goldFont.fnt", "GJ_button_02.png"
 	);
 	importBtnSpr->setScale(0.8f);
 
@@ -77,7 +106,7 @@ bool ListSelectPopup::init() {
 
 	auto exportBtnSpr = ButtonSprite::create(
 		"Export", 80, 80, 0.8f, false,
-		"goldFont.fnt", "GJ_button_02.png"
+		"goldFont.fnt", "GJ_button_03.png"
 	);
 	exportBtnSpr->setScale(0.8f);
 
@@ -118,7 +147,7 @@ bool ListSelectPopup::init() {
 
 			createQuickPopup(
 				"Confirm delete",
-				fmt::format("Delete {} list{}? This can’t be undone.", m_checkedListIDs.size(), m_checkedListIDs.size() == 1 ? "" : "s"),
+				fmt::format("Delete {} list{}? This can't be undone.", m_checkedListIDs.size(), m_checkedListIDs.size() == 1 ? "" : "s"),
 				"No", "Yes",
 				[this](auto, bool yesBtn) {
 					if (yesBtn) {
@@ -135,7 +164,9 @@ bool ListSelectPopup::init() {
 	);
 	m_deleteBtn->setID("delete-button");
 
-	m_bottomMenu = CCMenu::create(m_importBtn, m_exportBtn, m_deleteBtn, nullptr);
+	m_bottomMenu = CCMenu::create(
+		m_createBtn, m_importBtn, m_exportBtn, m_deleteBtn, nullptr
+	);
 	m_bottomMenu->setLayout(
 		SimpleRowLayout::create()
 		->setMainAxisAlignment(MainAxisAlignment::Between)

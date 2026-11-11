@@ -11,6 +11,7 @@ protected:
 	geode::Label* m_noListsLabel = nullptr;
 
 	cocos2d::CCMenu* m_bottomMenu = nullptr;
+	CCMenuItemSpriteExtra* m_createBtn = nullptr;
 	CCMenuItemSpriteExtra* m_importBtn = nullptr;
 	CCMenuItemSpriteExtra* m_exportBtn = nullptr;
 	CCMenuItemSpriteExtra* m_deleteBtn = nullptr;

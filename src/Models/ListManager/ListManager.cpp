@@ -246,7 +246,7 @@ void ListManager::importLists() {
 
 				FLAlertLayer::create(
 					"Error",
-					"This file contains invalid list data and can’t be imported.",
+					"This file contains invalid list data and can't be imported.",
 					"OK"
 				)->show();
 

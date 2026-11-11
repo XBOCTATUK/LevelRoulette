@@ -1,10 +1,10 @@
-#include "RenamePopup.hpp"
+#include "InputPopup.hpp"
 
 using namespace geode::prelude;
 
-RenamePopup* RenamePopup::create(const RouletteList& listData, geode::Function<void(std::string)> callback) {
-	auto ret = new RenamePopup();
-	if (ret && ret->init(listData, std::move(callback))) {
+InputPopup* InputPopup::create(const std::string& title, const std::string& text, const std::string& btnText, geode::Function<void(std::string)> callback) {
+	auto ret = new InputPopup();
+	if (ret && ret->init(title, text, btnText, std::move(callback))) {
 		ret->autorelease();
 		return ret;
 	}
@@ -12,23 +12,21 @@ RenamePopup* RenamePopup::create(const RouletteList& listData, geode::Function<v
 	return nullptr;
 }
 
-bool RenamePopup::init(const RouletteList& listData, geode::Function<void(std::string)> callback) {
+bool InputPopup::init(const std::string& title, const std::string& text, const std::string& btnText, geode::Function<void(std::string)> callback) {
 	if (!Popup::init(300.0f, 120.0f)) return false;
 
-	setTitle("Rename list");
+	setTitle(title);
 	m_callback = std::move(callback);
 
-	m_input = TextInput::create(160.0f, "Enter new name...");
-	m_input->setString(listData.name);
+	m_input = TextInput::create(240.0f, "");
+	m_input->setString(text);
 	m_buttonMenu->addChildAtPosition(
         m_input, Anchor::Center, { 0.0f, 5.0f }
     );
 
-	auto applySpr = ButtonSprite::create("Set");
+	auto applySpr = ButtonSprite::create(btnText.c_str());
 	auto applyBtn = CCMenuItemExt::createSpriteExtra(
 		applySpr, [this](auto) {
-			if (m_input->getString().empty()) return;
-
 			if (m_callback) {
 				m_callback(m_input->getString());
 			}
