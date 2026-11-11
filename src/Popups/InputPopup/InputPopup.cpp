@@ -20,12 +20,13 @@ bool InputPopup::init(const std::string& title, const std::string& text, const s
 
 	m_input = TextInput::create(240.0f, "");
 	m_input->setString(text);
+	m_input->setID("text-input");
 	m_buttonMenu->addChildAtPosition(
         m_input, Anchor::Center, { 0.0f, 5.0f }
     );
 
 	auto applySpr = ButtonSprite::create(btnText.c_str());
-	auto applyBtn = CCMenuItemExt::createSpriteExtra(
+	m_applyBtn = CCMenuItemExt::createSpriteExtra(
 		applySpr, [this](auto) {
 			if (m_callback) {
 				m_callback(m_input->getString());
@@ -34,8 +35,9 @@ bool InputPopup::init(const std::string& title, const std::string& text, const s
 			onClose(nullptr);
 		}
 	);
+	m_applyBtn->setID("apply-button");
 	m_buttonMenu->addChildAtPosition(
-        applyBtn, Anchor::Bottom, { 0.0f, 25.0f }
+        m_applyBtn, Anchor::Bottom, { 0.0f, 25.0f }
     );
 
 	return true;

@@ -26,6 +26,7 @@ bool ListSelectPopup::init() {
 	);
 	m_scrollBG->setAnchorPoint({ 0.5f, 0.5f });
 	m_scrollBG->ignoreAnchorPointForPosition(false);
+	m_scrollBG->setID("scroll-bg");
 	m_mainLayer->addChildAtPosition(
 		m_scrollBG, Anchor::Center, { 0.0f, 2.0f }
 	);
@@ -42,12 +43,14 @@ bool ListSelectPopup::init() {
 	);
 	m_listScroll->setAnchorPoint({ 0.5f, 0.5f });
 	m_listScroll->ignoreAnchorPointForPosition(false);
+	m_listScroll->setID("list-scroll");
 	m_mainLayer->addChildAtPosition(
 		m_listScroll, Anchor::Center, { 0.0f, 2.0f }
 	);
 
 	m_scrollBorders = ListBorders::create();
 	m_scrollBorders->setContentSize(m_scrollBG->getContentSize());
+	m_scrollBorders->setID("level-borders");
 	m_mainLayer->addChildAtPosition(
 		m_scrollBorders, Anchor::Center, { 0.0f, 2.0f }
 	);
@@ -88,7 +91,7 @@ bool ListSelectPopup::init() {
 			)->show();
 		}
 	);
-	m_createBtn->setID("import-button");
+	m_createBtn->setID("create-button");
 
 	auto importBtnSpr = ButtonSprite::create(
 		"Import", 80, 80, 0.8f, false,

@@ -30,7 +30,7 @@ bool RouletteLayer::init() {
 	setAnchorPoint({ 0.0f, 0.0f });
 
 	m_bg = TailyUI::RepeatBG::create("game_bg_01_001.png");
-	m_bg->setID("background");
+	m_bg->setID("bg");
 	addChildAtPosition(
 		m_bg, Anchor::BottomLeft, {}
 	);

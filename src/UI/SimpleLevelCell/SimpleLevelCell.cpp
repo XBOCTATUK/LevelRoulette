@@ -24,7 +24,7 @@ bool TailyUI::SimpleLevelCell::init(const LevelData& levelData, float width) {
 	m_bg->setScale(0.5f);
 	m_bg->setColor({ 0, 0, 0 });
 	m_bg->setOpacity(51);
-	m_bg->setID("background");
+	m_bg->setID("bg");
 	addChildAtPosition(
 		m_bg, Anchor::Center, {}
 	);

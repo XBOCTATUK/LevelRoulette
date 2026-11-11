@@ -28,7 +28,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 	m_bg->setScale(0.5f);
 	m_bg->setColor({ 0, 0, 0 });
 	m_bg->setOpacity(51);
-	m_bg->setID("background");
+	m_bg->setID("bg");
 	addChildAtPosition(
 		m_bg, Anchor::Center, {}
 	);
@@ -66,6 +66,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 			}
 		}
 	);
+	m_checkToggler->setID("check-toggler");
 
 	auto renameBtnSpr = CircleButtonSprite::createWithSprite(
 		"pencil-icon.png"_spr, 0.8f,
@@ -92,6 +93,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 			)->show();
 		}
 	);
+	m_renameBtn->setID("rename-button");
 
 	auto listsBtnSpr = CircleButtonSprite::createWithSprite(
 		"list-icon.png"_spr, 0.9f,
@@ -103,6 +105,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 			LevelListPopup::create(listData)->show();
 		}
 	);
+	m_levelListBtn->setID("level-list-button");
 
 	auto useSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongBtn_001.png");
 	useSpr->setScale(29.0f / useSpr->getContentHeight());
@@ -117,6 +120,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 			}
 		}
 	);
+	m_useToggler->setID("use-toggler");
 
 	m_btnMenu = CCMenu::create(
 		m_checkToggler, m_renameBtn, m_levelListBtn, m_useToggler, nullptr
@@ -129,6 +133,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 	);
 	m_btnMenu->setAnchorPoint({ 1.0f, 0.5f });
 	m_btnMenu->ignoreAnchorPointForPosition(false);
+	m_btnMenu->setID("button-menu");
 	addChildAtPosition(
 		m_btnMenu, Anchor::Right, { -5.0f, 0.0f }
 	);

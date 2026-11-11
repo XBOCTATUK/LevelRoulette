@@ -7,6 +7,7 @@ public:
 private:
 	geode::Function<void(std::string)> m_callback = nullptr;
 	geode::TextInput* m_input = nullptr;
+	CCMenuItemSpriteExtra* m_applyBtn = nullptr;
 
 	bool init(const std::string& title, const std::string& text, const std::string& btnText, geode::Function<void(std::string)> callback);
 };
