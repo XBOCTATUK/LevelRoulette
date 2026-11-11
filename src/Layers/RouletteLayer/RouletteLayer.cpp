@@ -1,7 +1,7 @@
 #include "RouletteLayer.hpp"
 #include "../../Models/ListManager/ListManager.hpp"
 #include "../../Popups/ListSelectPopup/ListSelectPopup.hpp"
-#include "SimpleLevelCell.hpp"
+#include "../../UI/SimpleLevelCell/SimpleLevelCell.hpp"
 
 using namespace geode::prelude;
 using namespace TailyUI;
@@ -202,7 +202,7 @@ bool RouletteLayer::init() {
 	);
 
 	m_selectedListLabel = Label::create("", "goldFont.fnt");
-	m_selectedListLabel->setScale(0.75f);
+	m_selectedListLabel->setLimitLabelWidth(m_levelListMenu->getContentWidth() - 40.0f, 0.75f, 0.4f);
 	m_selectedListLabel->setVisible(false);
 	m_selectedListLabel->setID("level-list-name");
 	m_levelListMenu->addChildAtPosition(
@@ -219,14 +219,12 @@ bool RouletteLayer::init() {
 	);
 	m_selectListBtn->setID("select-list-button");
 	m_levelListMenu->addChildAtPosition(
-		m_selectListBtn, Anchor::TopRight, { -25.0f, -23.0f }
+		m_selectListBtn, Anchor::TopRight, { -8.0f, -8.0f }
 	);
 
 	m_levelScroll = ScrollLayer::create(m_levelListMenu->getContentSize() - ccp(20.0f, 50.0f));
 	m_levelScroll->ignoreAnchorPointForPosition(false);
-	auto content = m_levelScroll->m_contentLayer;
-
-	content->setLayout(
+	m_levelScroll->m_contentLayer->setLayout(
 		ScrollLayer::createDefaultListLayout()
 	);
 	m_levelScroll->setID("level-scroll");
@@ -264,11 +262,12 @@ void RouletteLayer::loadCurrentList() {
 	m_selectedListLabel->setVisible(true);
 
 	for (auto& level : currentList->levels) {
-		auto cell = SimpleLevelCell::create(
+		auto cell = TailyUI::SimpleLevelCell::create(
 			level, m_levelScroll->getContentWidth()
 		);
 		m_levelScroll->m_contentLayer->addChild(cell);
 	}
+	
 	m_levelScroll->m_contentLayer->updateLayout();
 	m_levelScroll->scrollToTop();
 }

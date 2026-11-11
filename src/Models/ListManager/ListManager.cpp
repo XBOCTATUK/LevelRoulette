@@ -68,14 +68,14 @@ void ListManager::load() {
 		markBroken(lists.unwrapErr());
 		return;
 	}
-	s_lists = std::move(lists.unwrap());
-
-	s_currentListID = data["currentListID"].asInt().unwrapOr(0);
-	s_lastID = 0;
-
-	for (const auto& list : s_lists) {
+	
+	s_lists.clear();
+	for (const auto& list : lists.unwrap()) {
+		s_lists[list.id] = list;
 		s_lastID = list.id > s_lastID ? list.id : s_lastID;
 	}
+
+	s_currentListID = data["currentListID"].asInt().unwrapOr(0);
 }
 
 void ListManager::save() {
@@ -84,14 +84,21 @@ void ListManager::save() {
 		return;
 	}
 
+	std::vector<RouletteList> lists{};
+	lists.reserve(s_lists.size());
+
+	for (const auto& [key, list] : s_lists) {
+		lists.push_back(list);
+	}
+
 	saveData(matjson::makeObject({
 		{ "fileVersion", 2 },
 		{ "currentListID", s_currentListID },
-		{ "lists", s_lists }
+		{ "lists", lists }
 	}));
 }
 
-const std::vector<RouletteList>& ListManager::getLists() {
+const std::map<int, RouletteList>& ListManager::getLists() {
 	load();
 	return s_lists;
 }
@@ -99,10 +106,10 @@ const std::vector<RouletteList>& ListManager::getLists() {
 RouletteList* ListManager::getList(int listID) {
 	load();
 
-	auto it = std::ranges::find(s_lists, listID, &RouletteList::id);
+	auto it = s_lists.find(listID);
 	if (it == s_lists.end()) return nullptr;
 
-	return &*it;
+	return &it->second;
 }
 
 RouletteList* ListManager::getCurrentList() {
@@ -119,12 +126,14 @@ void ListManager::setCurrentList(int listID) {
 int ListManager::createList(const std::string& listName) {
 	load();
 
-	auto& list = s_lists.emplace_back(
-		RouletteList{ ++s_lastID, listName, {} }
+	int id = ++s_lastID;
+
+	s_lists.emplace(
+		id, RouletteList{id, listName, {}}
 	);
 	save();
 
-	return list.id;
+	return id;
 }
 
 void ListManager::renameList(int listID, const std::string& newName) {
@@ -137,11 +146,7 @@ void ListManager::renameList(int listID, const std::string& newName) {
 void ListManager::removeList(int listID) {
 	load();
 
-	std::erase_if(
-		s_lists, [listID](const auto& list) {
-			return list.id == listID;
-		}
-	);
+	if (s_lists.erase(listID) == 0) return;
 
 	if (s_currentListID == listID) {
 		s_currentListID = 0;
@@ -241,7 +246,7 @@ void ListManager::importLists() {
 
 				FLAlertLayer::create(
 					"Error",
-					"This file contains invalid list data and can't be imported.",
+					"This file contains invalid list data and can’t be imported.",
 					"OK"
 				)->show();
 
@@ -271,10 +276,11 @@ void ListManager::importLists() {
 			}
 
 			for (auto& list : lists) {
-				list.id = ++s_lastID;
-			}
+				int id = ++s_lastID;
+				list.id = id;
 
-			s_lists.insert(s_lists.end(), lists.begin(), lists.end());
+				s_lists[id] = list;
+			}
 			save();
 
 			FLAlertLayer::create(
@@ -286,7 +292,7 @@ void ListManager::importLists() {
 	);
 }
 
-void ListManager::exportLists(const std::vector<int> &listIDs) {
+void ListManager::exportLists(const std::unordered_set<int> &listIDs) {
 	load();
 
 	std::vector<RouletteList> listsToExport;
@@ -386,6 +392,8 @@ bool ListManager::saveBackup(const std::string& backupName) {
 }
 
 void ListManager::migrateData(const matjson::Value &data) {
+	s_lists.clear();
+
 	for (auto& [listKey, list] : data) {
 		if (!list.isObject()) continue;
 
@@ -410,7 +418,7 @@ void ListManager::migrateData(const matjson::Value &data) {
 		}
 
 		RouletteList rouletteList{ ++s_lastID, listKey, levels };
-		s_lists.push_back(rouletteList);
+		s_lists[rouletteList.id] = rouletteList;
 	}
 }
 

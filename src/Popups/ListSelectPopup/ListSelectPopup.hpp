@@ -8,12 +8,15 @@ protected:
 	cocos2d::CCLayerColor* m_scrollBG = nullptr;
 	geode::ScrollLayer* m_listScroll = nullptr;
 	geode::ListBorders* m_scrollBorders = nullptr;
+	geode::Label* m_noListsLabel = nullptr;
 
-	cocos2d::CCMenu* m_importExportMenu = nullptr;
+	cocos2d::CCMenu* m_bottomMenu = nullptr;
 	CCMenuItemSpriteExtra* m_importBtn = nullptr;
 	CCMenuItemSpriteExtra* m_exportBtn = nullptr;
+	CCMenuItemSpriteExtra* m_deleteBtn = nullptr;
 
-	std::vector<int> m_checkedListIDs;
+	std::unordered_set<int> m_checkedListIDs;
 
 	bool init();
+	void loadLists();
 };

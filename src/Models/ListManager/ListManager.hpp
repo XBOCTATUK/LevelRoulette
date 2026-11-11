@@ -4,7 +4,7 @@
 
 class ListManager {
 public:
-	static const std::vector<RouletteList>& getLists();
+	static const std::map<int, RouletteList>& getLists();
 	static RouletteList* getList(int listID);
 
 	static RouletteList* getCurrentList();
@@ -18,7 +18,7 @@ public:
 	static void removeLevelFromList(int listID, int levelID);
 
 	static void importLists();
-	static void exportLists(const std::vector<int>& listIDs);
+	static void exportLists(const std::unordered_set<int>& listIDs);
 
 private:
 	static geode::Result<matjson::Value> getData();
@@ -30,7 +30,7 @@ private:
 	static void markBroken(const std::string& reason);
 
 	static inline bool s_isLoaded = false;
-	static inline std::vector<RouletteList> s_lists;
+	static inline std::map<int, RouletteList> s_lists;
 	static inline int s_currentListID = 0;
 	static inline int s_lastID = 0;
 

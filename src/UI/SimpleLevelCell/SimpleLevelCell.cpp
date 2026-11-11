@@ -2,7 +2,7 @@
 
 using namespace geode::prelude;
 
-SimpleLevelCell* SimpleLevelCell::create(const LevelData& levelData, float width) {
+TailyUI::SimpleLevelCell* TailyUI::SimpleLevelCell::create(const LevelData& levelData, float width) {
 	auto ret = new SimpleLevelCell();
 	if (ret->init(levelData, width)) {
 		ret->autorelease();
@@ -12,7 +12,7 @@ SimpleLevelCell* SimpleLevelCell::create(const LevelData& levelData, float width
 	return nullptr;
 }
 
-bool SimpleLevelCell::init(const LevelData& levelData, float width) {
+bool TailyUI::SimpleLevelCell::init(const LevelData& levelData, float width) {
 	if (!CCNode::init()) return false;
 
 	setContentSize({ width, 32.0f });
