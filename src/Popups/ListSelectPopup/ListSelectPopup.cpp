@@ -73,22 +73,14 @@ bool ListSelectPopup::init() {
 
 	m_createBtn = CCMenuItemExt::createSpriteExtra(
 		createBtnSpr, [this](auto) {
-			InputPopup::create(
+			auto inputPopup = InputPopup::create(
 				"Create a list", "", "Create",
 				[](std::string listName) {
-					if (listName.empty()) {
-						FLAlertLayer::create(
-							"Empty list name",
-							"The list name cannot be empty.",
-							"Ok"
-						)->show();
-
-						return;
-					}
-
 					ListManager::createList(listName);
 				}
-			)->show();
+			);
+			inputPopup->setCharLimits(1, 32);
+			inputPopup->show();
 		}
 	);
 	m_createBtn->setID("create-button");

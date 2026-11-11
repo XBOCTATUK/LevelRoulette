@@ -28,6 +28,17 @@ bool InputPopup::init(const std::string& title, const std::string& text, const s
 	auto applySpr = ButtonSprite::create(btnText.c_str());
 	m_applyBtn = CCMenuItemExt::createSpriteExtra(
 		applySpr, [this](auto) {
+			auto str = m_input->getString();
+			if (str.size() < m_minChars || str.size() > m_maxChars) {
+				FLAlertLayer::create(
+					"Invalid Length",
+					fmt::format("Enter between {} and {} characters.", m_minChars, m_maxChars),
+					"OK"
+				)->show();
+				
+				return;
+			}
+
 			if (m_callback) {
 				m_callback(m_input->getString());
 			}
@@ -41,4 +52,11 @@ bool InputPopup::init(const std::string& title, const std::string& text, const s
     );
 
 	return true;
+}
+
+void InputPopup::setCharLimits(int min, int max) {
+	if (min > max || min < 0 || max < 0) return;
+
+	m_minChars = min;
+	m_maxChars = max;
 }

@@ -22,9 +22,9 @@ public:
 
 private:
 	static geode::Result<matjson::Value> getData();
-	static void saveData(const matjson::Value& data, const std::string& fileName = "lists.json");
-	static void load();
-	static void save();
+	static bool saveData(const matjson::Value& data, const std::string& fileName = "lists.json");
+	static bool load();
+	static bool save();
 	static bool saveBackup(const std::string& backupName);
 	static void migrateData(const matjson::Value& data);
 	static void markBroken(const std::string& reason);

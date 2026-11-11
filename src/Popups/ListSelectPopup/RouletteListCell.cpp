@@ -75,22 +75,14 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 
 	m_renameBtn = CCMenuItemExt::createSpriteExtra(
 		renameBtnSpr, [this, listData](auto) {
-			InputPopup::create(
+			auto inputPopup = InputPopup::create(
 				"Rename list", listData.name, "Set",
 				[this, listData](std::string newName) {
-					if (newName.empty()) {
-						FLAlertLayer::create(
-							"Empty list name",
-							"The list name cannot be empty.",
-							"Ok"
-						)->show();
-
-						return;
-					}
-
 					ListManager::renameList(listData.id, newName);
 				}
-			)->show();
+			);
+			inputPopup->setCharLimits(1, 32);
+			inputPopup->show();
 		}
 	);
 	m_renameBtn->setID("rename-button");

@@ -17,7 +17,7 @@ Result<matjson::Value> ListManager::getData() {
 	return Ok(data.unwrap());
 }
 
-void ListManager::saveData(const matjson::Value& data, const std::string& fileName) {
+bool ListManager::saveData(const matjson::Value& data, const std::string& fileName) {
 	auto listsPath = Mod::get()->getPersistentDir() / fileName;
 
 	auto writeResult = file::writeToJson(listsPath, data);
@@ -28,45 +28,49 @@ void ListManager::saveData(const matjson::Value& data, const std::string& fileNa
 			"Couldn't save your lists. Recent changes may be lost after restarting the game.",
 			"OK"
 		)->show();
+
+		return false;
 	}
+
+	return true;
 }
 
-void ListManager::load() {
-	if (s_isLoaded) return;
+bool ListManager::load() {
+	if (s_isLoaded) return !s_isBroken;
 	s_isLoaded = true;
 
 	auto dataResult = getData();
 	if (dataResult.isErr()) {
 		markBroken(dataResult.unwrapErr());
-		return;
+		return false;
 	}
 
 	auto data = dataResult.unwrap();
 	if (!data.isObject()) {
 		markBroken("the root value is not a JSON object");
-		return;
+		return false;
 	}
-	if (data.size() == 0) return;
+	if (data.size() == 0) return true;
 
-	if (!data.contains("fileVersion")) {
+	if (!data.contains("fileVersion") || !data["fileVersion"].isNumber()) {
 		auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
 		auto time = fmt::format("{:%Y-%m-%d_%H-%M-%S}", now);
 
 		if (!saveBackup(fmt::format("lists-backup-{}.json", time))) {
 			markBroken("couldn't create a backup before migrating to the new format");
-			return;
+			return false;
 		}
 
 		migrateData(data);
-		save();
+		if (!save()) return false;
 
-		return;
+		return true;
 	}
 
 	auto lists = data["lists"].as<std::vector<RouletteList>>();
 	if (lists.isErr()) {
 		markBroken(lists.unwrapErr());
-		return;
+		return false;
 	}
 	
 	s_lists.clear();
@@ -76,12 +80,14 @@ void ListManager::load() {
 	}
 
 	s_currentListID = data["currentListID"].asInt().unwrapOr(0);
+
+	return true;
 }
 
-void ListManager::save() {
+bool ListManager::save() {
 	if (s_isBroken) {
 		log::error("Lists weren't saved because the lists file failed to load");
-		return;
+		return false;
 	}
 
 	std::vector<RouletteList> lists{};
@@ -91,7 +97,7 @@ void ListManager::save() {
 		lists.push_back(list);
 	}
 
-	saveData(matjson::makeObject({
+	return saveData(matjson::makeObject({
 		{ "fileVersion", 2 },
 		{ "currentListID", s_currentListID },
 		{ "lists", lists }
@@ -281,13 +287,14 @@ void ListManager::importLists() {
 
 				s_lists[id] = list;
 			}
-			save();
-
-			FLAlertLayer::create(
-				"Import Complete",
-				fmt::format("Imported {} list{}.", lists.size(), lists.size() == 1 ? "" : "s"),
-				"OK"
-			)->show();
+			
+			if (save()) {
+				FLAlertLayer::create(
+					"Import Complete",
+					fmt::format("Imported {} list{}.", lists.size(), lists.size() == 1 ? "" : "s"),
+					"OK"
+				)->show();
+			}
 		}
 	);
 }
