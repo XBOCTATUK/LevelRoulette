@@ -17,6 +17,7 @@ protected:
 	cocos2d::CCMenu* m_bottomMenu = nullptr;
 
 	std::unordered_set<int> m_checkedListIDs;
+	geode::ListenerHandle m_updateScrollListener;
 
 	bool init();
 	void loadLists();

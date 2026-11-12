@@ -31,6 +31,9 @@ protected:
 	geode::ScrollLayer* m_levelScroll = nullptr;
 	geode::Label* m_noListLabel = nullptr;
 
+	geode::ListenerHandle m_currentListListener;
+	geode::ListenerHandle m_updateCurrentListListener;
+
 	bool init() override;
 	void loadCurrentList();
 

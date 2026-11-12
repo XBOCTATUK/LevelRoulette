@@ -1,7 +1,8 @@
 #include "ListSelectPopup.hpp"
-#include "../../Models/ListManager/ListManager.hpp"
-#include "../InputPopup/InputPopup.hpp"
 #include "RouletteListCell.hpp"
+#include "../InputPopup/InputPopup.hpp"
+#include "../../Models/ListManager/ListManager.hpp"
+#include "../../Events/UpdateListScrollEvent.hpp"
 
 using namespace geode::prelude;
 
@@ -77,6 +78,7 @@ bool ListSelectPopup::init() {
 				"Create a list", "", "Create",
 				[](std::string listName) {
 					ListManager::createList(listName);
+					UpdateListScrollEvent().send();
 				}
 			);
 			inputPopup->setCharLimits(1, 32);
@@ -94,7 +96,6 @@ bool ListSelectPopup::init() {
 	m_importBtn = CCMenuItemExt::createSpriteExtra(
 		importBtnSpr, [this](auto) {
 			ListManager::importLists();
-			loadLists();
 		}
 	);
 	m_importBtn->setID("import-button");
@@ -151,7 +152,7 @@ bool ListSelectPopup::init() {
 						}
 						m_checkedListIDs.clear();
 
-						loadLists();
+						UpdateListScrollEvent().send();
 					}
 				}
 			);
@@ -179,6 +180,21 @@ bool ListSelectPopup::init() {
 
 	m_bottomMenu->updateLayout();
 
+	m_updateScrollListener = UpdateListScrollEvent().listen(
+		[this]() {
+			auto content = m_listScroll->m_contentLayer;
+			float topY = m_listScroll->getContentHeight() - content->getContentHeight();
+			float scrollOffset = content->getPositionY() - topY;
+
+			loadLists();
+
+			topY = m_listScroll->getContentHeight() - content->getContentHeight();
+			content->setPositionY(
+				topY + std::clamp(scrollOffset, 0.0f, std::max(-topY, 0.0f))
+			);
+		}
+	);
+
 	loadLists();
 
 	return true;
@@ -186,6 +202,7 @@ bool ListSelectPopup::init() {
 
 void ListSelectPopup::loadLists() {
 	m_listScroll->m_contentLayer->removeAllChildren();
+	m_checkedListIDs.clear();
 
 	const auto& lists = ListManager::getLists();
 	if (lists.empty()) {

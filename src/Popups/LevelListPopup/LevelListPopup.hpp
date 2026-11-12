@@ -16,6 +16,7 @@ protected:
 	cocos2d::CCMenu* m_bottomMenu = nullptr;
 
     std::unordered_set<int> m_checkedLevelIDs;
+    geode::ListenerHandle m_updateScrollListener;
 
     bool init(const RouletteList& listData);
     void loadLevels(const RouletteList& listData);

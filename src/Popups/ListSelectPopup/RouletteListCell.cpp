@@ -2,6 +2,9 @@
 #include "../../Models/ListManager/ListManager.hpp"
 #include "../LevelListPopup/LevelListPopup.hpp"
 #include "../InputPopup/InputPopup.hpp"
+#include "../../Events/CurrentListEvent.hpp"
+#include "../../Events/UpdateListCellEvent.hpp"
+#include "../../Events/UpdateCurrentListEvent.hpp"
 
 using namespace geode::prelude;
 
@@ -78,6 +81,11 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 				"Rename list", listData.name, "Set",
 				[this, &listData](std::string newName) {
 					ListManager::renameList(listData.id, newName);
+
+					UpdateListCellEvent(listData.id).send();
+					if (ListManager::isCurrentList(listData.id)) {
+						UpdateCurrentListEvent().send();
+					}
 				}
 			);
 			inputPopup->setCharLimits(1, 32);
@@ -111,6 +119,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 			}
 		}
 	);
+	m_useToggler->toggle(ListManager::isCurrentList(listData.id));
 	m_useToggler->setID("use-toggler");
 
 	m_btnMenu = CCMenu::create(
@@ -130,6 +139,24 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 	);
 
 	m_btnMenu->updateLayout();
+
+	m_currentListListener = CurrentListEvent().listen(
+		[this, ownListID = listData.id](int listID) {
+			m_useToggler->toggle(ownListID == listID);
+			m_useToggler->setEnabled(ownListID != listID);
+		}
+	);
+
+	m_updateCellListener = UpdateListCellEvent(listData.id).listen(
+		[this, &listData]() {
+			auto levelCountStr = listData.levels.empty()
+			? "Empty list"
+			: fmt::format("{} level{}", listData.levels.size(), listData.levels.size() == 1 ? "" : "s");
+
+			m_listName->setString(listData.name.c_str());
+			m_levelCount->setString(levelCountStr.c_str());
+		}
+	);
 
 	return true;
 }

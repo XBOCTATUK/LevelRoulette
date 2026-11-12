@@ -1,6 +1,9 @@
 #include "LevelListPopup.hpp"
 #include "../../Models/ListManager/ListManager.hpp"
 #include "../../UI/RouletteLevelCell/RouletteLevelCell.hpp"
+#include "../../Events/UpdateLevelScrollEvent.hpp"
+#include "../../Events/UpdateListCellEvent.hpp"
+#include "../../Events/UpdateCurrentListEvent.hpp"
 
 using namespace geode::prelude;
 
@@ -93,7 +96,9 @@ bool LevelListPopup::init(const RouletteList& listData) {
 						}
 						m_checkedLevelIDs.clear();
 
-						loadLevels(listData);
+						UpdateListCellEvent(listData.id).send();
+						UpdateLevelScrollEvent().send();
+						UpdateCurrentListEvent().send();
 					}
 				}
 			);
@@ -121,6 +126,21 @@ bool LevelListPopup::init(const RouletteList& listData) {
 
 	m_bottomMenu->updateLayout();
 
+	m_updateScrollListener = UpdateLevelScrollEvent().listen(
+		[this, &listData]() {
+			auto content = m_levelScroll->m_contentLayer;
+			float topY = m_levelScroll->getContentHeight() - content->getContentHeight();
+			float scrollOffset = content->getPositionY() - topY;
+
+			loadLevels(listData);
+
+			topY = m_levelScroll->getContentHeight() - content->getContentHeight();
+			content->setPositionY(
+				topY + std::clamp(scrollOffset, 0.0f, std::max(-topY, 0.0f))
+			);
+		}
+	);
+
 	loadLevels(listData);
 
     return true;
@@ -128,6 +148,7 @@ bool LevelListPopup::init(const RouletteList& listData) {
 
 void LevelListPopup::loadLevels(const RouletteList& listData) {
 	m_levelScroll->m_contentLayer->removeAllChildren();
+	m_checkedLevelIDs.clear();
 	
     if (listData.levels.empty()) {
 		m_noLevelsLabel->setVisible(true);

@@ -19,6 +19,9 @@ protected:
 	CCMenuItemSpriteExtra* m_levelListBtn = nullptr;
 	CCMenuItemToggler* m_useToggler = nullptr;
 	cocos2d::CCMenu* m_btnMenu = nullptr;
+
+	geode::ListenerHandle m_currentListListener;
+	geode::ListenerHandle m_updateCellListener;
 	
 	bool init(const RouletteList& listData, float width);
 };

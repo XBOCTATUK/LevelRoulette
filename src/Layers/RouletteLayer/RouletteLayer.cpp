@@ -2,6 +2,8 @@
 #include "../../Models/ListManager/ListManager.hpp"
 #include "../../Popups/ListSelectPopup/ListSelectPopup.hpp"
 #include "../../UI/RouletteLevelCell/RouletteLevelCell.hpp"
+#include "../../Events/CurrentListEvent.hpp"
+#include "../../Events/UpdateCurrentListEvent.hpp"
 
 using namespace geode::prelude;
 using namespace TailyUI;
@@ -242,6 +244,27 @@ bool RouletteLayer::init() {
 		m_noListLabel, Anchor::Center, {}
 	);
 
+	m_currentListListener = CurrentListEvent().listen(
+		[this](int listID) {
+			loadCurrentList();
+		}
+	);
+
+	m_updateCurrentListListener = UpdateCurrentListEvent().listen(
+		[this]() {
+			auto content = m_levelScroll->m_contentLayer;
+			float topY = m_levelScroll->getContentHeight() - content->getContentHeight();
+			float scrollOffset = content->getPositionY() - topY;
+
+			loadCurrentList();
+
+			topY = m_levelScroll->getContentHeight() - content->getContentHeight();
+			content->setPositionY(
+				topY + std::clamp(scrollOffset, 0.0f, std::max(-topY, 0.0f))
+			);
+		}
+	);
+
 	loadCurrentList();
 
 	setKeyboardEnabled(true);
@@ -251,13 +274,16 @@ bool RouletteLayer::init() {
 }
 
 void RouletteLayer::loadCurrentList() {
-	auto currentList = ListManager::getCurrentList();
+	m_levelScroll->m_contentLayer->removeAllChildren();
 
+	auto currentList = ListManager::getCurrentList();
 	if (!currentList) {
 		m_noListLabel->setVisible(true);
+		m_selectedListLabel->setVisible(false);
 		return;
 	}
 
+	m_noListLabel->setVisible(false);
 	m_selectedListLabel->setString(currentList->name.c_str());
 	m_selectedListLabel->setVisible(true);
 

@@ -9,6 +9,7 @@ public:
 
 	static RouletteList* getCurrentList();
 	static void setCurrentList(int listID);
+	static bool isCurrentList(int listID);
 
 	static int createList(const std::string& listName);
 	static void renameList(int listID, const std::string& newName);

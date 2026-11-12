@@ -1,6 +1,8 @@
 #include "ListManager.hpp"
 #include <Geode/utils/file.hpp>
 #include "../../Utils/DifficultyFromLevel.hpp"
+#include "../../Events/CurrentListEvent.hpp"
+#include "../../Events/UpdateListScrollEvent.hpp"
 
 using namespace geode::prelude;
 
@@ -127,6 +129,12 @@ void ListManager::setCurrentList(int listID) {
 	load();
 	s_currentListID = listID;
 	save();
+
+	CurrentListEvent().send(listID);
+}
+
+bool ListManager::isCurrentList(int listID) {
+	return s_currentListID == listID;
 }
 
 int ListManager::createList(const std::string& listName) {
@@ -155,7 +163,7 @@ void ListManager::removeList(int listID) {
 	if (s_lists.erase(listID) == 0) return;
 
 	if (s_currentListID == listID) {
-		s_currentListID = 0;
+		setCurrentList(0);
 	}
 
 	save();
@@ -294,6 +302,8 @@ void ListManager::importLists() {
 					fmt::format("Imported {} list{}.", lists.size(), lists.size() == 1 ? "" : "s"),
 					"OK"
 				)->show();
+
+				UpdateListScrollEvent().send();
 			}
 		}
 	);
