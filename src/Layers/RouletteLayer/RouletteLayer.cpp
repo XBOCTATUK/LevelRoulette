@@ -1,7 +1,7 @@
 #include "RouletteLayer.hpp"
 #include "../../Models/ListManager/ListManager.hpp"
 #include "../../Popups/ListSelectPopup/ListSelectPopup.hpp"
-#include "../../UI/SimpleLevelCell/SimpleLevelCell.hpp"
+#include "../../UI/RouletteLevelCell/RouletteLevelCell.hpp"
 
 using namespace geode::prelude;
 using namespace TailyUI;
@@ -262,7 +262,7 @@ void RouletteLayer::loadCurrentList() {
 	m_selectedListLabel->setVisible(true);
 
 	for (auto& level : currentList->levels) {
-		auto cell = TailyUI::SimpleLevelCell::create(
+		auto cell = TailyUI::RouletteLevelCell::create(
 			level, m_levelScroll->getContentWidth()
 		);
 		m_levelScroll->m_contentLayer->addChild(cell);

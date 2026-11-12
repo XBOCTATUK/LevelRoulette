@@ -197,7 +197,9 @@ void ListSelectPopup::loadLists() {
 
 	for (const auto& [key, list] : lists) {
 		auto cell = RouletteListCell::create(
-			list, m_listScroll->getContentWidth() - 20.0f,
+			list, m_listScroll->getContentWidth() - 20.0f
+		);
+		cell->setCheckCallback(
 			[this](int listID, bool checked) {
 				if (checked) m_checkedListIDs.insert(listID);
 				else if (!checked) m_checkedListIDs.erase(listID);

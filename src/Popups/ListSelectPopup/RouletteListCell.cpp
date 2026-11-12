@@ -5,9 +5,9 @@
 
 using namespace geode::prelude;
 
-RouletteListCell* RouletteListCell::create(const RouletteList& listData, float width, geode::Function<void(int listID, bool checked)> callback) {
+RouletteListCell* RouletteListCell::create(const RouletteList& listData, float width) {
 	auto ret = new RouletteListCell();
-	if (ret->init(listData, width, std::move(callback))) {
+	if (ret->init(listData, width)) {
 		ret->autorelease();
 		return ret;
 	}
@@ -15,11 +15,10 @@ RouletteListCell* RouletteListCell::create(const RouletteList& listData, float w
 	return nullptr;
 }
 
-bool RouletteListCell::init(const RouletteList& listData, float width, geode::Function<void(int listID, bool checked)> callback) {
+bool RouletteListCell::init(const RouletteList& listData, float width) {
 	if (!CCNode::init()) return false;
 
 	setContentSize({ width, 32.0f });
-	m_callback = std::move(callback);
 
 	m_bg = NineSlice::create("square02b_001.png");
 	m_bg->setContentSize({
@@ -60,7 +59,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 	);
 
 	m_checkToggler = CCMenuItemExt::createTogglerWithStandardSprites(
-		0.6f, [this, listData](CCMenuItemToggler* self) {
+		0.6f, [this, &listData](CCMenuItemToggler* self) {
 			if (m_callback) {
 				m_callback(listData.id, !self->isToggled());
 			}
@@ -74,10 +73,10 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 	);
 
 	m_renameBtn = CCMenuItemExt::createSpriteExtra(
-		renameBtnSpr, [this, listData](auto) {
+		renameBtnSpr, [this, &listData](auto) {
 			auto inputPopup = InputPopup::create(
 				"Rename list", listData.name, "Set",
-				[this, listData](std::string newName) {
+				[this, &listData](std::string newName) {
 					ListManager::renameList(listData.id, newName);
 				}
 			);
@@ -93,20 +92,20 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 	);
 
 	m_levelListBtn = CCMenuItemExt::createSpriteExtra(
-		listsBtnSpr, [this, listData](auto) {
+		listsBtnSpr, [this, &listData](auto) {
 			LevelListPopup::create(listData)->show();
 		}
 	);
 	m_levelListBtn->setID("level-list-button");
 
 	auto useSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongBtn_001.png");
-	useSpr->setScale(29.0f / useSpr->getContentHeight());
+	useSpr->setScale(28.0f / useSpr->getContentHeight());
 	auto inUseSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongOnBtn_001.png");
-	inUseSpr->setScale(29.0f / inUseSpr->getContentHeight());
+	inUseSpr->setScale(28.0f / inUseSpr->getContentHeight());
 
 	m_useToggler = CCMenuItemExt::createToggler(
 		inUseSpr, useSpr,
-		[this, listData](CCMenuItemToggler* self) {
+		[this, &listData](CCMenuItemToggler* self) {
 			if (!self->isToggled()) {
 				ListManager::setCurrentList(listData.id);
 			}
@@ -121,7 +120,7 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 		SimpleRowLayout::create()
 		->setMainAxisScaling(AxisScaling::Fit)
 		->setCrossAxisScaling(AxisScaling::Fit)
-		->setGap(2.5f)
+		->setGap(3.0f)
 	);
 	m_btnMenu->setAnchorPoint({ 1.0f, 0.5f });
 	m_btnMenu->ignoreAnchorPointForPosition(false);
@@ -133,4 +132,8 @@ bool RouletteListCell::init(const RouletteList& listData, float width, geode::Fu
 	m_btnMenu->updateLayout();
 
 	return true;
+}
+
+void RouletteListCell::setCheckCallback(geode::Function<void(int listID, bool checked)> callback) {
+	m_callback = std::move(callback);
 }

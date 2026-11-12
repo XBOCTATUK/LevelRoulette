@@ -4,7 +4,8 @@
 
 class RouletteListCell : public cocos2d::CCNode {
 public:
-	static RouletteListCell* create(const RouletteList& listData, float width, geode::Function<void(int listID, bool checked)> callback);
+	static RouletteListCell* create(const RouletteList& listData, float width);
+	void setCheckCallback(geode::Function<void(int listID, bool checked)> callback);
 	
 protected:
 	geode::Function<void(int listID, bool checked)> m_callback = nullptr;
@@ -19,5 +20,5 @@ protected:
 	CCMenuItemToggler* m_useToggler = nullptr;
 	cocos2d::CCMenu* m_btnMenu = nullptr;
 	
-	bool init(const RouletteList& listData, float width, geode::Function<void(int listID, bool checked)> callback);
+	bool init(const RouletteList& listData, float width);
 };
