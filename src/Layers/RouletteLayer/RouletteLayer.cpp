@@ -252,14 +252,14 @@ bool RouletteLayer::init() {
 
 	m_updateCurrentListListener = UpdateCurrentListEvent().listen(
 		[this]() {
-			auto content = m_levelScroll->m_contentLayer;
-			float topY = m_levelScroll->getContentHeight() - content->getContentHeight();
-			float scrollOffset = content->getPositionY() - topY;
+			auto scrollContent = m_levelScroll->m_contentLayer;
+			float topY = m_levelScroll->getContentHeight() - scrollContent->getContentHeight();
+			float scrollOffset = scrollContent->getPositionY() - topY;
 
 			loadCurrentList();
 
-			topY = m_levelScroll->getContentHeight() - content->getContentHeight();
-			content->setPositionY(
+			topY = m_levelScroll->getContentHeight() - scrollContent->getContentHeight();
+			scrollContent->setPositionY(
 				topY + std::clamp(scrollOffset, 0.0f, std::max(-topY, 0.0f))
 			);
 		}
@@ -287,11 +287,11 @@ void RouletteLayer::loadCurrentList() {
 	m_selectedListLabel->setString(currentList->name.c_str());
 	m_selectedListLabel->setVisible(true);
 
-	for (auto& level : currentList->levels) {
-		auto cell = TailyUI::RouletteLevelCell::create(
-			level, m_levelScroll->getContentWidth()
+	for (const auto& levelData : currentList->levels) {
+		auto levelCell = TailyUI::RouletteLevelCell::create(
+			levelData, m_levelScroll->getContentWidth()
 		);
-		m_levelScroll->m_contentLayer->addChild(cell);
+		m_levelScroll->m_contentLayer->addChild(levelCell);
 	}
 	
 	m_levelScroll->m_contentLayer->updateLayout();

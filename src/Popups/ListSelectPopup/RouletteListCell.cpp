@@ -4,13 +4,12 @@
 #include "../InputPopup/InputPopup.hpp"
 #include "../../Events/CurrentListEvent.hpp"
 #include "../../Events/UpdateListCellEvent.hpp"
-#include "../../Events/UpdateCurrentListEvent.hpp"
 
 using namespace geode::prelude;
 
-RouletteListCell* RouletteListCell::create(const RouletteList& listData, float width) {
+RouletteListCell* RouletteListCell::create(const RouletteList& listData, float width, const std::vector<LevelData>& levelsToAdd) {
 	auto ret = new RouletteListCell();
-	if (ret->init(listData, width)) {
+	if (ret->init(listData, width, levelsToAdd)) {
 		ret->autorelease();
 		return ret;
 	}
@@ -18,7 +17,7 @@ RouletteListCell* RouletteListCell::create(const RouletteList& listData, float w
 	return nullptr;
 }
 
-bool RouletteListCell::init(const RouletteList& listData, float width) {
+bool RouletteListCell::init(const RouletteList& listData, float width, const std::vector<LevelData>& levelsToAdd) {
 	if (!CCNode::init()) return false;
 
 	setContentSize({ width, 32.0f });
@@ -63,8 +62,8 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 
 	m_checkToggler = CCMenuItemExt::createTogglerWithStandardSprites(
 		0.6f, [this, &listData](CCMenuItemToggler* self) {
-			if (m_callback) {
-				m_callback(listData.id, !self->isToggled());
+			if (m_checkCallback) {
+				m_checkCallback(listData.id, !self->isToggled());
 			}
 		}
 	);
@@ -79,13 +78,14 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 		renameBtnSpr, [this, &listData](auto) {
 			auto inputPopup = InputPopup::create(
 				"Rename list", listData.name, "Set",
-				[this, &listData](std::string newName) {
-					ListManager::renameList(listData.id, newName);
+				[this, &listData](std::string newListName) {
+					auto oldListName = listData.name;
+					ListManager::renameList(listData.id, newListName);
 
-					UpdateListCellEvent(listData.id).send();
-					if (ListManager::isCurrentList(listData.id)) {
-						UpdateCurrentListEvent().send();
-					}
+					Notification::create(
+						fmt::format("Renamed '{}' to '{}'", oldListName, newListName),
+						NotificationIcon::Success
+					)->show();
 				}
 			);
 			inputPopup->setCharLimits(1, 32);
@@ -94,37 +94,62 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 	);
 	m_renameBtn->setID("rename-button");
 
-	auto listsBtnSpr = CircleButtonSprite::createWithSprite(
-		"list-icon.png"_spr, 0.9f,
-		CircleBaseColor::Green, CircleBaseSize::Tiny
-	);
-
-	m_levelListBtn = CCMenuItemExt::createSpriteExtra(
-		listsBtnSpr, [this, &listData](auto) {
+	m_levelListBtn = CCMenuItemExt::createSpriteExtraWithFrameName(
+		"GJ_viewListsBtn_001.png", 0.57f, [this, &listData](auto) {
 			LevelListPopup::create(listData)->show();
 		}
 	);
 	m_levelListBtn->setID("level-list-button");
 
-	auto useSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongBtn_001.png");
-	useSpr->setScale(28.0f / useSpr->getContentHeight());
-	auto inUseSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongOnBtn_001.png");
-	inUseSpr->setScale(28.0f / inUseSpr->getContentHeight());
+	if (levelsToAdd.empty()) {
+		auto useBtnSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongBtn_001.png");
+		useBtnSpr->setScale(28.0f / useBtnSpr->getContentHeight());
+		auto inUseBtnSpr = CCSprite::createWithSpriteFrameName("GJ_selectSongOnBtn_001.png");
+		inUseBtnSpr->setScale(28.0f / inUseBtnSpr->getContentHeight());
 
-	m_useToggler = CCMenuItemExt::createToggler(
-		inUseSpr, useSpr,
-		[this, &listData](CCMenuItemToggler* self) {
-			if (!self->isToggled()) {
-				ListManager::setCurrentList(listData.id);
+		m_useToggler = CCMenuItemExt::createToggler(
+			inUseBtnSpr, useBtnSpr,
+			[this, &listData](CCMenuItemToggler* self) {
+				if (!self->isToggled()) {
+					ListManager::setCurrentList(listData.id);
+
+					Notification::create(
+						"List selected",
+						NotificationIcon::Success
+					)->show();
+				}
 			}
-		}
-	);
-	m_useToggler->toggle(ListManager::isCurrentList(listData.id));
-	m_useToggler->setID("use-toggler");
+		);
+		m_useToggler->toggle(ListManager::isCurrentList(listData.id));
+		m_useToggler->setID("use-toggler");
 
-	m_btnMenu = CCMenu::create(
-		m_checkToggler, m_renameBtn, m_levelListBtn, m_useToggler, nullptr
-	);
+		m_btnMenu = CCMenu::create(
+			m_checkToggler, m_renameBtn, m_levelListBtn, m_useToggler, nullptr
+		);
+	}
+	else {
+		auto addLevelsBtnSpr = CircleButtonSprite::createWithSpriteFrameName(
+			"GJ_listAddBtn_001.png", 1.0f,
+			CircleBaseColor::Green, CircleBaseSize::Tiny
+		);
+
+		m_addLevelsBtn = CCMenuItemExt::createSpriteExtra(
+			addLevelsBtnSpr, [this, &listData, levelsToAdd](auto) {
+				ListManager::addLevelsToList(listData.id, levelsToAdd);
+
+				Notification::create(
+					fmt::format("Level{} added", levelsToAdd.size() == 1 ? "" : "s"),
+					NotificationIcon::Success
+				)->show();
+			}
+		);
+		m_addLevelsBtn->setID("add-levels-button");
+
+		m_btnMenu = CCMenu::create(
+			m_checkToggler, m_renameBtn, m_levelListBtn, m_addLevelsBtn, nullptr
+		);
+	}
+
 	m_btnMenu->setLayout(
 		SimpleRowLayout::create()
 		->setMainAxisScaling(AxisScaling::Fit)
@@ -140,12 +165,14 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 
 	m_btnMenu->updateLayout();
 
-	m_currentListListener = CurrentListEvent().listen(
-		[this, ownListID = listData.id](int listID) {
-			m_useToggler->toggle(ownListID == listID);
-			m_useToggler->setEnabled(ownListID != listID);
-		}
-	);
+	if (levelsToAdd.empty()) {	
+		m_currentListListener = CurrentListEvent().listen(
+			[this, ownListID = listData.id](int listID) {
+				m_useToggler->toggle(ownListID == listID);
+				m_useToggler->setEnabled(ownListID != listID);
+			}
+		);
+	}
 
 	m_updateCellListener = UpdateListCellEvent(listData.id).listen(
 		[this, &listData]() {
@@ -161,6 +188,6 @@ bool RouletteListCell::init(const RouletteList& listData, float width) {
 	return true;
 }
 
-void RouletteListCell::setCheckCallback(geode::Function<void(int listID, bool checked)> callback) {
-	m_callback = std::move(callback);
+void RouletteListCell::setCheckCallback(geode::Function<void(int listID, bool checked)> checkCallback) {
+	m_checkCallback = std::move(checkCallback);
 }

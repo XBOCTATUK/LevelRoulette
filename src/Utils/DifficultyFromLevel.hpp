@@ -18,10 +18,10 @@ namespace Utils {
 
 		if (level->m_ratings < 5) return Difficulty::NA;
 
-		int diff = static_cast<int>(std::roundf(
+		int difficulty = static_cast<int>(std::roundf(
 			static_cast<float>(level->m_ratingsSum) / level->m_ratings)
 		);
 
-		return static_cast<Difficulty>(diff);
+		return static_cast<Difficulty>(difficulty);
 	}
 }

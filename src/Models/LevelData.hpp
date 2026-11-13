@@ -12,22 +12,22 @@ struct LevelData {
 template <>
 struct matjson::Serialize<LevelData> {
 	static geode::Result<LevelData> fromJson(const matjson::Value& value) {
-		LevelData level;
+		LevelData levelData;
 
-		GEODE_UNWRAP_INTO(level.levelID, value["levelID"].asInt());
-		GEODE_UNWRAP_INTO(level.levelName, value["levelName"].asString());
-		GEODE_UNWRAP_INTO(level.creatorName, value["creator"].asString());
-		GEODE_UNWRAP_INTO(level.difficulty, stringResultToDifficulty(value["diff"].asString()));
+		GEODE_UNWRAP_INTO(levelData.levelID, value["levelID"].asInt());
+		GEODE_UNWRAP_INTO(levelData.levelName, value["levelName"].asString());
+		GEODE_UNWRAP_INTO(levelData.creatorName, value["creator"].asString());
+		GEODE_UNWRAP_INTO(levelData.difficulty, stringResultToDifficulty(value["diff"].asString()));
 
-		return geode::Ok(level);
+		return geode::Ok(levelData);
 	}
 
-	static matjson::Value toJson(const LevelData& level) {
+	static matjson::Value toJson(const LevelData& levelData) {
 		return matjson::makeObject({
-			{ "levelID", level.levelID },
-			{ "levelName", level.levelName },
-			{ "creator", level.creatorName },
-			{ "diff", difficultyToString(level.difficulty) }
+			{ "levelID", levelData.levelID },
+			{ "levelName", levelData.levelName },
+			{ "creator", levelData.creatorName },
+			{ "diff", difficultyToString(levelData.difficulty) }
 		});
 	}
 };

@@ -12,11 +12,17 @@ public:
 	static bool isCurrentList(int listID);
 
 	static int createList(const std::string& listName);
-	static void renameList(int listID, const std::string& newName);
+	static void renameList(int listID, const std::string& newListName);
 	static void removeList(int listID);
+	static void removeLists(std::unordered_set<int> listIDs);
 
 	static void addLevelToList(int listID, GJGameLevel* level);
+	static void addLevelToList(int listID, const LevelData& levelData);
+	static void addLevelsToList(int listID, const std::vector<GJGameLevel*>& levels);
+	static void addLevelsToList(int listID, const std::vector<LevelData>& levels);
+
 	static void removeLevelFromList(int listID, int levelID);
+	static void removeLevelsFromList(int listID, std::unordered_set<int> levelIDs);
 
 	static void importLists();
 	static void exportLists(const std::unordered_set<int>& listIDs);
@@ -29,6 +35,7 @@ private:
 	static bool saveBackup(const std::string& backupName);
 	static void migrateData(const matjson::Value& data);
 	static void markBroken(const std::string& reason);
+	static void notifyLevelsChanged(int listID);
 
 	static inline bool s_isLoaded = false;
 	static inline std::map<int, RouletteList> s_lists;

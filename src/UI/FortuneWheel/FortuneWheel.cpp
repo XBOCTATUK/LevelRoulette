@@ -44,7 +44,7 @@ namespace TailyUI {
 			float startRad = segmentAngle * i;
 			float endRad = startRad + segmentAngle;
 
-			std::vector<CCPoint> verts;
+			std::vector<CCPoint> verts{};
 			verts.push_back(
 				center + ccp(std::cos(startRad), std::sin(startRad)) * innerRad
 			);

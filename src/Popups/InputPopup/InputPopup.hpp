@@ -3,7 +3,7 @@
 class InputPopup : public geode::Popup {
 public:
     static InputPopup* create(const std::string& title, const std::string& text, const std::string& btnText, geode::Function<void(std::string)> callback);
-	void setCharLimits(int min, int max);
+	void setCharLimits(int minChars, int maxChars);
 
 private:
 	geode::Function<void(std::string)> m_callback = nullptr;

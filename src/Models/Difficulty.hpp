@@ -5,8 +5,8 @@ enum class Difficulty {
 	HardDemon, EasyDemon, MediumDemon, InsaneDemon, ExtremeDemon
 };
 
-inline std::string difficultyToString(Difficulty d) {
-	switch (d) {
+inline std::string difficultyToString(Difficulty difficulty) {
+	switch (difficulty) {
 		case Difficulty::NA: return "N/A";
 		case Difficulty::Auto: return "Auto";
 		case Difficulty::Easy: return "Easy";
@@ -23,24 +23,24 @@ inline std::string difficultyToString(Difficulty d) {
 	}
 }
 
-inline Difficulty stringToDifficulty(const std::string& s) {
-	if (s == "N/A") return Difficulty::NA;
-	if (s == "Auto") return Difficulty::Auto;
-	if (s == "Easy") return Difficulty::Easy;
-	if (s == "Normal") return Difficulty::Normal;
-	if (s == "Hard") return Difficulty::Hard;
-	if (s == "Harder") return Difficulty::Harder;
-	if (s == "Insane") return Difficulty::Insane;
-	if (s == "EasyDemon") return Difficulty::EasyDemon;
-	if (s == "MediumDemon") return Difficulty::MediumDemon;
-	if (s == "HardDemon") return Difficulty::HardDemon;
-	if (s == "InsaneDemon")  return Difficulty::InsaneDemon;
-	if (s == "ExtremeDemon") return Difficulty::ExtremeDemon;
+inline Difficulty stringToDifficulty(const std::string& difficultyName) {
+	if (difficultyName == "N/A") return Difficulty::NA;
+	if (difficultyName == "Auto") return Difficulty::Auto;
+	if (difficultyName == "Easy") return Difficulty::Easy;
+	if (difficultyName == "Normal") return Difficulty::Normal;
+	if (difficultyName == "Hard") return Difficulty::Hard;
+	if (difficultyName == "Harder") return Difficulty::Harder;
+	if (difficultyName == "Insane") return Difficulty::Insane;
+	if (difficultyName == "EasyDemon") return Difficulty::EasyDemon;
+	if (difficultyName == "MediumDemon") return Difficulty::MediumDemon;
+	if (difficultyName == "HardDemon") return Difficulty::HardDemon;
+	if (difficultyName == "InsaneDemon")  return Difficulty::InsaneDemon;
+	if (difficultyName == "ExtremeDemon") return Difficulty::ExtremeDemon;
 
 	return Difficulty::NA;
 }
 
-inline geode::Result<Difficulty> stringResultToDifficulty(geode::Result<std::string> r) {
-	if (r.isOk()) return geode::Ok(stringToDifficulty(r.unwrap()));
+inline geode::Result<Difficulty> stringResultToDifficulty(geode::Result<std::string> difficultyResult) {
+	if (difficultyResult.isOk()) return geode::Ok(stringToDifficulty(difficultyResult.unwrap()));
 	return geode::Ok(Difficulty::NA);
 }

@@ -6,9 +6,9 @@
 
 using namespace geode::prelude;
 
-ListSelectPopup* ListSelectPopup::create() {
+ListSelectPopup* ListSelectPopup::create(const std::vector<LevelData>& levelsToAdd) {
 	auto ret = new ListSelectPopup();
-	if (ret->init()) {
+	if (ret->init(levelsToAdd)) {
 		ret->autorelease();
 		return ret;
 	}
@@ -16,7 +16,7 @@ ListSelectPopup* ListSelectPopup::create() {
 	return nullptr;
 }
 
-bool ListSelectPopup::init() {
+bool ListSelectPopup::init(const std::vector<LevelData>& levelsToAdd) {
 	if (!Popup::init(400.0f, 280.0f)) return false;
 
 	setTitle("Select a List");
@@ -78,7 +78,11 @@ bool ListSelectPopup::init() {
 				"Create a list", "", "Create",
 				[](std::string listName) {
 					ListManager::createList(listName);
-					UpdateListScrollEvent().send();
+
+					Notification::create(
+						"List created",
+						NotificationIcon::Success
+					)->show();
 				}
 			);
 			inputPopup->setCharLimits(1, 32);
@@ -147,12 +151,15 @@ bool ListSelectPopup::init() {
 				"No", "Yes",
 				[this](auto, bool yesBtn) {
 					if (yesBtn) {
-						for (int listID : m_checkedListIDs) {
-							ListManager::removeList(listID);
-						}
-						m_checkedListIDs.clear();
+						auto selectedCount = m_checkedListIDs.size();
+						ListManager::removeLists(m_checkedListIDs);
 
-						UpdateListScrollEvent().send();
+						Notification::create(
+							fmt::format("Deleted {} list{}", selectedCount, selectedCount == 1 ? "" : "s"),
+							NotificationIcon::Success
+						)->show();
+
+						m_checkedListIDs.clear();
 					}
 				}
 			);
@@ -181,26 +188,26 @@ bool ListSelectPopup::init() {
 	m_bottomMenu->updateLayout();
 
 	m_updateScrollListener = UpdateListScrollEvent().listen(
-		[this]() {
-			auto content = m_listScroll->m_contentLayer;
-			float topY = m_listScroll->getContentHeight() - content->getContentHeight();
-			float scrollOffset = content->getPositionY() - topY;
+		[this, levelsToAdd]() {
+			auto scrollContent = m_listScroll->m_contentLayer;
+			float topY = m_listScroll->getContentHeight() - scrollContent->getContentHeight();
+			float scrollOffset = scrollContent->getPositionY() - topY;
 
-			loadLists();
+			loadLists(levelsToAdd);
 
-			topY = m_listScroll->getContentHeight() - content->getContentHeight();
-			content->setPositionY(
+			topY = m_listScroll->getContentHeight() - scrollContent->getContentHeight();
+			scrollContent->setPositionY(
 				topY + std::clamp(scrollOffset, 0.0f, std::max(-topY, 0.0f))
 			);
 		}
 	);
 
-	loadLists();
+	loadLists(levelsToAdd);
 
 	return true;
 }
 
-void ListSelectPopup::loadLists() {
+void ListSelectPopup::loadLists(const std::vector<LevelData>& levelsToAdd) {
 	m_listScroll->m_contentLayer->removeAllChildren();
 	m_checkedListIDs.clear();
 
@@ -212,17 +219,17 @@ void ListSelectPopup::loadLists() {
 
 	m_noListsLabel->setVisible(false);
 
-	for (const auto& [key, list] : lists) {
-		auto cell = RouletteListCell::create(
-			list, m_listScroll->getContentWidth() - 20.0f
+	for (const auto& [listID, listData] : lists) {
+		auto listCell = RouletteListCell::create(
+			listData, m_listScroll->getContentWidth() - 20.0f, levelsToAdd
 		);
-		cell->setCheckCallback(
+		listCell->setCheckCallback(
 			[this](int listID, bool checked) {
 				if (checked) m_checkedListIDs.insert(listID);
 				else if (!checked) m_checkedListIDs.erase(listID);
 			}
 		);
-		m_listScroll->m_contentLayer->addChild(cell);
+		m_listScroll->m_contentLayer->addChild(listCell);
 	}
 
 	m_listScroll->m_contentLayer->updateLayout();

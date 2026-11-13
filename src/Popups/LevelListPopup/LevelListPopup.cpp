@@ -2,8 +2,6 @@
 #include "../../Models/ListManager/ListManager.hpp"
 #include "../../UI/RouletteLevelCell/RouletteLevelCell.hpp"
 #include "../../Events/UpdateLevelScrollEvent.hpp"
-#include "../../Events/UpdateListCellEvent.hpp"
-#include "../../Events/UpdateCurrentListEvent.hpp"
 
 using namespace geode::prelude;
 
@@ -91,14 +89,15 @@ bool LevelListPopup::init(const RouletteList& listData) {
 				"No", "Yes",
 				[this, &listData](auto, bool yesBtn) {
 					if (yesBtn) {
-						for (int levelID : m_checkedLevelIDs) {
-							ListManager::removeLevelFromList(listData.id, levelID);
-						}
+						auto selectedCount = m_checkedLevelIDs.size();
+						ListManager::removeLevelsFromList(listData.id, m_checkedLevelIDs);
+						
+						Notification::create(
+							fmt::format("Deleted {} level{}", selectedCount, selectedCount == 1 ? "" : "s"),
+							NotificationIcon::Success
+						)->show();
+						
 						m_checkedLevelIDs.clear();
-
-						UpdateListCellEvent(listData.id).send();
-						UpdateLevelScrollEvent().send();
-						UpdateCurrentListEvent().send();
 					}
 				}
 			);
@@ -128,14 +127,14 @@ bool LevelListPopup::init(const RouletteList& listData) {
 
 	m_updateScrollListener = UpdateLevelScrollEvent().listen(
 		[this, &listData]() {
-			auto content = m_levelScroll->m_contentLayer;
-			float topY = m_levelScroll->getContentHeight() - content->getContentHeight();
-			float scrollOffset = content->getPositionY() - topY;
+			auto scrollContent = m_levelScroll->m_contentLayer;
+			float topY = m_levelScroll->getContentHeight() - scrollContent->getContentHeight();
+			float scrollOffset = scrollContent->getPositionY() - topY;
 
 			loadLevels(listData);
 
-			topY = m_levelScroll->getContentHeight() - content->getContentHeight();
-			content->setPositionY(
+			topY = m_levelScroll->getContentHeight() - scrollContent->getContentHeight();
+			scrollContent->setPositionY(
 				topY + std::clamp(scrollOffset, 0.0f, std::max(-topY, 0.0f))
 			);
 		}
@@ -157,17 +156,17 @@ void LevelListPopup::loadLevels(const RouletteList& listData) {
 
 	m_noLevelsLabel->setVisible(false);
 
-	for (const auto& level : listData.levels) {
-		auto cell = TailyUI::RouletteLevelCell::create(
-			level, m_levelScroll->getContentWidth() - 20.0f, true
+	for (const auto& levelData : listData.levels) {
+		auto levelCell = TailyUI::RouletteLevelCell::create(
+			levelData, m_levelScroll->getContentWidth() - 20.0f, true
 		);
-		cell->setCheckCallback(
+		levelCell->setCheckCallback(
 			[this](int levelID, bool checked) {
 				if (checked) m_checkedLevelIDs.insert(levelID);
 				else if (!checked) m_checkedLevelIDs.erase(levelID);
 			}
 		);
-		m_levelScroll->m_contentLayer->addChild(cell);
+		m_levelScroll->m_contentLayer->addChild(levelCell);
 	}
 
 	m_levelScroll->m_contentLayer->updateLayout();

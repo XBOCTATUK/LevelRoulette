@@ -55,8 +55,8 @@ bool TailyUI::RouletteLevelCell::init(const LevelData& levelData, float width, b
 
 	m_checkToggler = CCMenuItemExt::createTogglerWithStandardSprites(
 		0.6f, [this, &levelData](CCMenuItemToggler* self) {
-			if (m_callback) {
-				m_callback(levelData.levelID, !self->isToggled());
+			if (m_checkCallback) {
+				m_checkCallback(levelData.levelID, !self->isToggled());
 			}
 		}
 	);
@@ -83,6 +83,6 @@ bool TailyUI::RouletteLevelCell::init(const LevelData& levelData, float width, b
 	return true;
 }
 
-void TailyUI::RouletteLevelCell::setCheckCallback(geode::Function<void(int, bool)> callback) {
-	m_callback = std::move(callback);
+void TailyUI::RouletteLevelCell::setCheckCallback(geode::Function<void(int, bool)> checkCallback) {
+	m_checkCallback = std::move(checkCallback);
 }

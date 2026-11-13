@@ -10,21 +10,21 @@ class $modify(LevelSearchLayer) {
 		auto rightFilterMenu = getChildByID("other-filter-menu");
 		if (!rightFilterMenu) return true;
 
-		auto spr = CCSprite::create("logo-spr.png"_spr);
-		auto btnSpr = CircleButtonSprite::create(
-			spr, CircleBaseColor::Green, CircleBaseSize::Small
+		auto logo = createModLogo(Mod::get());
+		auto rouletteBtnSpr = CircleButtonSprite::create(
+			logo, CircleBaseColor::Green, CircleBaseSize::Medium
 		);
 
-		auto btn = CCMenuItemExt::createSpriteExtra(
-			btnSpr, [](auto) {
+		auto rouletteBtn = CCMenuItemExt::createSpriteExtra(
+			rouletteBtnSpr, [](auto) {
 				CCDirector::get()->pushScene(
 					CCTransitionFade::create(0.5f, RouletteLayer::scene())
 				);
 			}
 		);
-		btn->setID("roulette-btn"_spr);
+		rouletteBtn->setID("roulette-btn"_spr);
 
-		rightFilterMenu->addChild(btn);
+		rightFilterMenu->addChild(rouletteBtn);
 		rightFilterMenu->updateLayout();
 
 		return true;

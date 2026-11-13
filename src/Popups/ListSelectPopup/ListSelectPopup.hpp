@@ -1,8 +1,10 @@
 #pragma once
 
+#include "../../Models/LevelData.hpp"
+
 class ListSelectPopup : public geode::Popup {
 public:
-	static ListSelectPopup* create();
+	static ListSelectPopup* create(const std::vector<LevelData>& levelsToAdd = {});
 
 protected:
 	cocos2d::CCLayerColor* m_scrollBG = nullptr;
@@ -19,6 +21,6 @@ protected:
 	std::unordered_set<int> m_checkedListIDs;
 	geode::ListenerHandle m_updateScrollListener;
 
-	bool init();
-	void loadLists();
+	bool init(const std::vector<LevelData>& levelsToAdd);
+	void loadLists(const std::vector<LevelData>& levelsToAdd);
 };
